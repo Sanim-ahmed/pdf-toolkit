@@ -46,6 +46,12 @@
       "regex": "^/favicon\\.ico(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/favicon\\.ico(?:/)?$"
+    },
+    {
+      "page": "/merge-pdf",
+      "regex": "^/merge\\-pdf(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/merge\\-pdf(?:/)?$"
     }
   ],
   "dataRoutes": [],

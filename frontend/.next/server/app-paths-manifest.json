@@ -2,5 +2,6 @@
   "/_global-error/page": "app/_global-error/page.js",
   "/_not-found/page": "app/_not-found/page.js",
   "/favicon.ico/route": "app/favicon.ico/route.js",
+  "/merge-pdf/page": "app/merge-pdf/page.js",
   "/page": "app/page.js"
 }
