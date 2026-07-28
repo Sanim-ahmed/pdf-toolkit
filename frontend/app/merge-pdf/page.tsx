@@ -76,7 +76,7 @@ export default function MergePdfPage() {
       const formData = new FormData();
       files.forEach((f) => formData.append("files", f.file));
 
-      const res = await fetch("http://localhost:8000/api/pdf/merge", {
+      const res = await fetch("https://pdf-toolkit-backend-tma2.onrender.com/api/pdf/merge", {
         method: "POST",
         body: formData,
       });
