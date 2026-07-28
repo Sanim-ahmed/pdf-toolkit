@@ -69,11 +69,39 @@ export default function MergePdfPage() {
     [addFiles]
   );
 
-  const handleMerge = useCallback(() => {
+  const handleMerge = useCallback(async () => {
     if (!files.length || isMerging) return;
     setIsMerging(true);
-    setTimeout(() => setIsMerging(false), 3000);
-  }, [files.length, isMerging]);
+    try {
+      const formData = new FormData();
+      files.forEach((f) => formData.append("files", f.file));
+
+      const res = await fetch("http://localhost:8000/api/pdf/merge", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: "Merge failed" }));
+        throw new Error(err.detail || "Merge failed");
+      }
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "merged.pdf";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error("Merge error:", e);
+      alert(e instanceof Error ? e.message : "Failed to merge PDFs");
+    } finally {
+      setIsMerging(false);
+    }
+  }, [files, isMerging]);
 
   return (
     <>

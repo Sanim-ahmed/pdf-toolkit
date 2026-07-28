@@ -1,12 +1,15 @@
+import Link from "next/link";
+
 interface ToolCardProps {
   name: string;
   description: string;
   icon: React.ReactNode;
   gradient: string;
+  href?: string;
 }
 
-export default function ToolCard({ name, description, icon, gradient }: ToolCardProps) {
-  return (
+export default function ToolCard({ name, description, icon, gradient, href }: ToolCardProps) {
+  const content = (
     <div className="group relative cursor-pointer rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 transition-all duration-300 hover:-translate-y-2 hover:border-indigo-500/30 hover:bg-white/[0.05] hover:shadow-2xl hover:shadow-indigo-500/[0.08]">
       <div
         className={`mb-5 flex h-14 w-14 items-center justify-center rounded-xl ${gradient} text-white shadow-lg transition-all duration-300 group-hover:scale-110 group-hover:shadow-xl`}
@@ -33,4 +36,9 @@ export default function ToolCard({ name, description, icon, gradient }: ToolCard
       <div className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-b from-indigo-500/[0.03] to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
     </div>
   );
+
+  if (href) {
+    return <Link href={href}>{content}</Link>;
+  }
+  return content;
 }

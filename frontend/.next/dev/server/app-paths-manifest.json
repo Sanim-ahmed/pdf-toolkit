@@ -1,3 +1,4 @@
 {
-  "/merge-pdf/page": "app/merge-pdf/page.js"
+  "/merge-pdf/page": "app/merge-pdf/page.js",
+  "/page": "app/page.js"
 }
