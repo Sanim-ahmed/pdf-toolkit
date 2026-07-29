@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes.merge import router as merge_router
 from app.api.routes.split import router as split_router
+from app.api.routes.pdf_to_word import router as pdf_to_word_router
 
 app = FastAPI(title="PDF Toolkit API", version="1.0.0")
 
@@ -19,6 +20,7 @@ app.add_middleware(
 
 app.include_router(merge_router, prefix="/api/pdf")
 app.include_router(split_router, prefix="/api/pdf")
+app.include_router(pdf_to_word_router, prefix="/api/pdf")
 
 
 @app.get("/")
