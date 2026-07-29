@@ -3,3 +3,4 @@ uvicorn==0.34.2
 python-multipart==0.0.20
 pypdf==5.5.0
 pdf2docx==0.5.13
+fpdf2==2.8.7

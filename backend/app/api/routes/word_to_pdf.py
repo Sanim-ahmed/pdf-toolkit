@@ -1,11 +1,10 @@
 import logging
 import os
-import shutil
-import subprocess
-import tempfile
 
-from fastapi import APIRouter, BackgroundTasks, File, HTTPException, UploadFile
-from fastapi.responses import FileResponse
+from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi.responses import Response
+
+from app.services.docx_to_pdf import convert
 
 logger = logging.getLogger(__name__)
 
@@ -17,46 +16,9 @@ DOCX_MIME_TYPES = {
     "application/octet-stream",
 }
 
-LIBREOFFICE_BINARIES = ["soffice", "libreoffice"]
-
-
-def _find_libreoffice() -> str | None:
-    for name in LIBREOFFICE_BINARIES:
-        path = shutil.which(name)
-        if path:
-            return path
-    return None
-
-
-LIBREOFFICE_BIN = _find_libreoffice()
-if LIBREOFFICE_BIN is None:
-    logger.warning(
-        "LibreOffice not found on PATH (tried: %s). "
-        "Word to PDF conversion will fail until it is installed.",
-        ", ".join(LIBREOFFICE_BINARIES),
-    )
-
-
-def cleanup(paths: list[str]) -> None:
-    for p in paths:
-        try:
-            if p and os.path.exists(p):
-                if os.path.isdir(p):
-                    shutil.rmtree(p)
-                else:
-                    os.unlink(p)
-        except OSError:
-            pass
-
 
 @router.post("")
-async def word_to_pdf(file: UploadFile = File(...), background_tasks: BackgroundTasks = BackgroundTasks()):
-    if LIBREOFFICE_BIN is None:
-        raise HTTPException(
-            status_code=503,
-            detail="Word to PDF conversion is unavailable: LibreOffice is not installed on the server.",
-        )
-
+async def word_to_pdf(file: UploadFile = File(...)):
     if file.content_type not in DOCX_MIME_TYPES and not (file.filename or "").lower().endswith(".docx"):
         raise HTTPException(
             status_code=400,
@@ -65,57 +27,21 @@ async def word_to_pdf(file: UploadFile = File(...), background_tasks: Background
 
     content = await file.read()
 
-    tmp_dir = None
+    if not content:
+        raise HTTPException(status_code=400, detail="Uploaded file is empty.")
+
     try:
-        tmp_dir = tempfile.mkdtemp()
-
-        docx_path = os.path.join(tmp_dir, file.filename or "document.docx")
-        with open(docx_path, "wb") as f:
-            f.write(content)
-
-        result = subprocess.run(
-            [LIBREOFFICE_BIN, "--headless", "--convert-to", "pdf", "--outdir", tmp_dir, docx_path],
-            capture_output=True,
-            text=True,
-            timeout=60,
-        )
-
-        if result.returncode != 0:
-            logger.error(
-                "LibreOffice conversion failed: stderr=%s stdout=%s",
-                result.stderr.strip(),
-                result.stdout.strip(),
-            )
-            raise RuntimeError(f"LibreOffice conversion failed: {result.stderr.strip()}")
-
-        pdf_filename = os.path.splitext(file.filename or "document")[0] + ".pdf"
-        pdf_path = os.path.join(tmp_dir, pdf_filename)
-
-        if not os.path.exists(pdf_path):
-            pdf_files = [f for f in os.listdir(tmp_dir) if f.lower().endswith(".pdf")]
-            if not pdf_files:
-                logger.error("LibreOffice did not produce a PDF output in %s", tmp_dir)
-                raise RuntimeError("LibreOffice did not produce a PDF output.")
-            pdf_path = os.path.join(tmp_dir, pdf_files[0])
-            pdf_filename = pdf_files[0]
-
-        background_tasks.add_task(cleanup, [tmp_dir])
-
-        return FileResponse(
-            path=pdf_path,
-            media_type="application/pdf",
-            filename=pdf_filename,
-        )
-    except HTTPException:
-        cleanup([tmp_dir])
-        raise
-    except subprocess.TimeoutExpired:
-        logger.error("LibreOffice conversion timed out after 60 seconds")
-        cleanup([tmp_dir])
-        raise HTTPException(status_code=500, detail="Conversion timed out after 60 seconds.")
+        pdf_bytes = convert(content)
     except Exception as exc:
         logger.error("Word to PDF conversion failed: %s", exc)
-        cleanup([tmp_dir])
         raise HTTPException(
             status_code=500, detail=f"Failed to convert Word to PDF: {exc}"
         )
+
+    output_filename = os.path.splitext(file.filename or "document")[0] + ".pdf"
+
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{output_filename}"'},
+    )
