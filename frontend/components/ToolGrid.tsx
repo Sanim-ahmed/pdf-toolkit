@@ -49,6 +49,7 @@ const tools = [
     name: "Compress PDF",
     description: "Reduce PDF file size while maintaining quality for easy sharing.",
     gradient: "bg-gradient-to-br from-emerald-500 to-emerald-600",
+    href: "/compress-pdf",
     icon: (
       <svg className="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 14l-7 7m0 0l-7-7m7 7V3" />

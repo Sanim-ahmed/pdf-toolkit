@@ -1,6 +1,7 @@
 {
   "/_global-error/page": "/_global-error",
   "/_not-found/page": "/_not-found",
+  "/compress-pdf/page": "/compress-pdf",
   "/favicon.ico/route": "/favicon.ico",
   "/merge-pdf/page": "/merge-pdf",
   "/page": "/",

@@ -42,6 +42,12 @@
       "namedRegex": "^/_not\\-found(?:/)?$"
     },
     {
+      "page": "/compress-pdf",
+      "regex": "^/compress\\-pdf(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/compress\\-pdf(?:/)?$"
+    },
+    {
       "page": "/favicon.ico",
       "regex": "^/favicon\\.ico(?:/)?$",
       "routeKeys": {},
