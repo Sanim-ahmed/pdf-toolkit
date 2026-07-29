@@ -4,6 +4,8 @@ import { useState, useCallback, useRef } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://pdf-toolkit-backend-docker.onrender.com";
+
 function formatSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -81,7 +83,7 @@ export default function WordToPdfPage() {
       const formData = new FormData();
       formData.append("file", file.file);
 
-      const res = await fetch("https://pdf-toolkit-backend-tma2.onrender.com/api/pdf/from-word", {
+      const res = await fetch(`${API_BASE}/api/pdf/from-word`, {
         method: "POST",
         body: formData,
       });
