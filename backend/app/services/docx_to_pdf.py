@@ -1,62 +1,142 @@
-import io
+import logging
 import os
+import shutil
+import subprocess
+import tempfile
+import time
 
-from docx import Document as DocxDocument
-from docx.enum.text import WD_ALIGN_PARAGRAPH
-from fpdf import FPDF
+logger = logging.getLogger(__name__)
 
-_FONTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "fonts")
-
-
-def _resolve_alignment(docx_alignment) -> str:
-    mapping = {
-        WD_ALIGN_PARAGRAPH.LEFT: "L",
-        WD_ALIGN_PARAGRAPH.CENTER: "C",
-        WD_ALIGN_PARAGRAPH.RIGHT: "R",
-        WD_ALIGN_PARAGRAPH.JUSTIFY: "J",
-    }
-    return mapping.get(docx_alignment, "L")
+_LOCATE_CANDIDATES = [
+    "soffice",
+    "/usr/bin/soffice",
+    "/usr/lib/libreoffice/program/soffice",
+    "C:\\Program Files\\LibreOffice\\program\\soffice.exe",
+    "C:\\Program Files (x86)\\LibreOffice\\program\\soffice.exe",
+]
 
 
-def _heading_level_to_size(level: int) -> tuple[int, bool]:
-    sizes = {1: 22, 2: 18, 3: 15, 4: 13, 5: 12, 6: 11}
-    return sizes.get(level, 12), True
+def _find_soffice() -> str:
+    for candidate in _LOCATE_CANDIDATES:
+        found = shutil.which(candidate)
+        if found:
+            return found
+    raise RuntimeError(
+        "LibreOffice (soffice) not found. "
+        "Install LibreOffice or verify it is on the system PATH."
+    )
+
+
+def _get_soffice_version(soffice_path: str) -> str:
+    try:
+        result = subprocess.run(
+            [soffice_path, "--version"],
+            capture_output=True,
+            text=True,
+            timeout=15,
+        )
+        return (result.stdout or result.stderr or "unknown").strip()
+    except Exception as exc:
+        logger.warning("Failed to read LibreOffice version: %s", exc)
+        return "unknown"
 
 
 def convert(docx_bytes: bytes) -> bytes:
-    doc = DocxDocument(io.BytesIO(docx_bytes))
-    pdf = FPDF()
-    pdf.set_auto_page_break(auto=True, margin=20)
+    soffice_path = _find_soffice()
+    lo_version = _get_soffice_version(soffice_path)
 
-    pdf.add_font("DejaVu", "", os.path.join(_FONTS_DIR, "DejaVuSans.ttf"), uni=True)
-    pdf.add_font("DejaVu", "B", os.path.join(_FONTS_DIR, "DejaVuSans-Bold.ttf"), uni=True)
-    pdf.add_font("DejaVu", "I", os.path.join(_FONTS_DIR, "DejaVuSans-Oblique.ttf"), uni=True)
-    pdf.add_font("DejaVu", "BI", os.path.join(_FONTS_DIR, "DejaVuSans-BoldOblique.ttf"), uni=True)
+    logger.debug("LibreOffice executable: %s", soffice_path)
+    logger.debug("LibreOffice version: %s", lo_version)
 
-    pdf.add_page()
+    tmp_dir: str | None = None
+    try:
+        tmp_dir = tempfile.mkdtemp(prefix="docx2pdf_")
 
-    for para in doc.paragraphs:
-        style_name = para.style.name.lower() if para.style else ""
-        is_heading = style_name.startswith("heading")
+        docx_path = os.path.join(tmp_dir, "input.docx")
+        with open(docx_path, "wb") as f:
+            f.write(docx_bytes)
 
-        if is_heading:
-            level = int(style_name.replace("heading", "").strip()) if any(c.isdigit() for c in style_name) else 1
-            size, bold = _heading_level_to_size(level)
-            pdf.set_font("DejaVu", "B" if bold else "", size)
-        else:
-            pdf.set_font("DejaVu", "", 12)
+        pdf_path = os.path.join(tmp_dir, "input.pdf")
+        outdir = tmp_dir
 
-        align = _resolve_alignment(para.alignment)
-        text = para.text.strip()
+        cmd = [
+            soffice_path,
+            "--headless",
+            "--convert-to",
+            "pdf",
+            "--outdir",
+            outdir,
+            docx_path,
+        ]
 
-        if not text:
-            pdf.ln(4)
-            continue
+        logger.debug("Conversion command: %s", " ".join(cmd))
 
-        pdf.multi_cell(0, 6, text, align=align)
-        pdf.ln(2)
+        env = os.environ.copy()
+        env["HOME"] = tmp_dir
+        env["TMPDIR"] = tmp_dir
 
-    buf = io.BytesIO()
-    pdf.output(buf)
-    buf.seek(0)
-    return buf.read()
+        start = time.perf_counter()
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=60,
+            env=env,
+        )
+        elapsed = time.perf_counter() - start
+
+        logger.debug("LibreOffice exit code: %d", result.returncode)
+        logger.debug("LibreOffice stdout: %s", result.stdout.strip() if result.stdout else "(empty)")
+        logger.debug("LibreOffice stderr: %s", result.stderr.strip() if result.stderr else "(empty)")
+        logger.debug("Conversion time: %.2f seconds", elapsed)
+
+        if result.returncode != 0:
+            raise RuntimeError(
+                f"LibreOffice exited with code {result.returncode}. "
+                f"stdout: {result.stdout.strip()}; "
+                f"stderr: {result.stderr.strip()}"
+            )
+
+        if not os.path.isfile(pdf_path):
+            raise RuntimeError(
+                f"LibreOffice finished successfully but output PDF was not found at {pdf_path}. "
+                f"stdout: {result.stdout.strip()}; "
+                f"stderr: {result.stderr.strip()}"
+            )
+
+        with open(pdf_path, "rb") as f:
+            pdf_bytes = f.read()
+
+        if not pdf_bytes:
+            raise RuntimeError("Output PDF is empty (0 bytes).")
+
+        logger.debug(
+            "Generated PDF size: %s bytes (%.2f KB)",
+            len(pdf_bytes),
+            len(pdf_bytes) / 1024,
+        )
+
+        return pdf_bytes
+
+    except subprocess.TimeoutExpired:
+        logger.error("LibreOffice conversion timed out after 60 seconds")
+        raise RuntimeError(
+            "LibreOffice conversion timed out after 60 seconds. "
+            "The document may be too large or corrupted."
+        )
+    except FileNotFoundError:
+        raise RuntimeError(
+            f"LibreOffice executable not found at '{soffice_path}'. "
+            "It may have been removed or the installation is incomplete."
+        )
+    except RuntimeError:
+        raise
+    except Exception as exc:
+        logger.error("Unexpected error during DOCX to PDF conversion: %s", exc)
+        raise RuntimeError(f"Unexpected conversion error: {exc}")
+    finally:
+        if tmp_dir and os.path.isdir(tmp_dir):
+            try:
+                shutil.rmtree(tmp_dir, ignore_errors=True)
+            except Exception as exc:
+                logger.warning("Failed to clean up temporary directory %s: %s", tmp_dir, exc)
