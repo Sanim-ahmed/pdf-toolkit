@@ -146,10 +146,10 @@ export default function CompressPdfPage() {
       <main className="flex-1">
         <section className="relative overflow-hidden px-6 pb-24 pt-28 md:pt-36">
           <div className="pointer-events-none absolute inset-0 -z-10 bg-mesh" />
-          <div className="pointer-events-none absolute left-1/2 top-0 -z-10 h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-emerald-500/[0.06] blur-[120px]" />
+          <div className="pointer-events-none absolute left-1/2 top-0 -z-10 h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-blue-500/[0.06] blur-[120px]" />
 
           <div className="mx-auto max-w-3xl text-center">
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-4 py-1.5 text-sm font-medium text-emerald-400">
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-blue-500/20 bg-blue-500/10 px-4 py-1.5 text-sm font-medium text-blue-400">
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
               </svg>
@@ -180,8 +180,8 @@ export default function CompressPdfPage() {
               }}
               className={`relative cursor-pointer rounded-2xl border-2 border-dashed p-10 text-center transition-all duration-300 ${
                 isDragging
-                  ? "border-emerald-500 bg-emerald-500/[0.08] scale-[1.02] shadow-2xl shadow-emerald-500/10"
-                  : "border-white/10 bg-white/[0.02] hover:border-emerald-500/40 hover:bg-emerald-500/[0.04]"
+                  ? "border-blue-500 bg-blue-500/[0.08] scale-[1.02] shadow-2xl shadow-blue-500/10"
+                  : "border-white/10 bg-white/[0.02] hover:border-blue-500/40 hover:bg-blue-500/[0.04]"
               }`}
             >
               <input
@@ -192,10 +192,10 @@ export default function CompressPdfPage() {
                 className="hidden"
               />
 
-              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-500/10">
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-500/10">
                 <svg
                   className={`h-8 w-8 transition-colors ${
-                    isDragging ? "text-emerald-400" : "text-emerald-500/60"
+                    isDragging ? "text-blue-400" : "text-blue-500/60"
                   }`}
                   fill="none"
                   stroke="currentColor"
@@ -215,7 +215,7 @@ export default function CompressPdfPage() {
               </p>
               <p className="mt-2 text-sm text-slate-500">
                 or{" "}
-                <span className="text-emerald-400 underline underline-offset-2">
+                <span className="text-blue-400 underline underline-offset-2">
                   browse files
                 </span>
               </p>
@@ -237,8 +237,8 @@ export default function CompressPdfPage() {
                 </div>
 
                 <ul className="space-y-2" role="list">
-                  <li className="glass-card flex items-center gap-4 rounded-xl px-4 py-3 transition-all duration-200 hover:border-emerald-500/20">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-400">
+                  <li className="glass-card flex items-center gap-4 rounded-xl px-4 py-3 transition-all duration-200 hover:border-blue-500/20">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 text-blue-400">
                       <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path
                           strokeLinecap="round"
@@ -275,7 +275,7 @@ export default function CompressPdfPage() {
                       key={p.value}
                       className={`flex cursor-pointer items-center gap-4 rounded-xl border px-4 py-3 transition-all ${
                         preset === p.value
-                          ? "border-emerald-500/40 bg-emerald-500/[0.06]"
+                          ? "border-blue-500/40 bg-blue-500/[0.06]"
                           : "border-white/10 bg-white/[0.02] hover:border-white/20"
                       }`}
                     >
@@ -285,7 +285,7 @@ export default function CompressPdfPage() {
                         value={p.value}
                         checked={preset === p.value}
                         onChange={(e) => setPreset(e.target.value)}
-                        className="h-4 w-4 accent-emerald-500"
+                        className="h-4 w-4 accent-blue-500"
                       />
                       <div>
                         <p className="text-sm font-medium text-white">{p.label}</p>
@@ -302,7 +302,7 @@ export default function CompressPdfPage() {
                 )}
 
                 {stats && (
-                  <div className="mt-5 grid grid-cols-2 gap-3 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.04] p-4">
+                  <div className="mt-5 grid grid-cols-2 gap-3 rounded-xl border border-blue-500/20 bg-blue-500/[0.04] p-4">
                     <div>
                       <p className="text-xs text-slate-500">Original Size</p>
                       <p className="text-sm font-medium text-white">{formatSize(stats.originalSize)}</p>
@@ -313,11 +313,19 @@ export default function CompressPdfPage() {
                     </div>
                     <div>
                       <p className="text-xs text-slate-500">Reduction</p>
-                      <p className="text-sm font-medium text-emerald-400">{stats.ratio.toFixed(1)}%</p>
+                      <p className="text-sm font-medium text-blue-400">{stats.ratio.toFixed(1)}%</p>
                     </div>
                     <div>
-                      <p className="text-xs text-slate-500">Time</p>
-                      <p className="text-sm font-medium text-white">{stats.time}s</p>
+                      <p className="text-xs text-slate-500">Compression Ratio</p>
+                      <p className="text-sm font-medium text-white">
+                        {stats.compressedSize > 0
+                          ? (stats.originalSize / stats.compressedSize).toFixed(2) + "x"
+                          : "N/A"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-500">Processing Time</p>
+                      <p className="text-sm font-medium text-white">{stats.time.toFixed(2)}s</p>
                     </div>
                   </div>
                 )}
@@ -325,7 +333,7 @@ export default function CompressPdfPage() {
                 {downloadUrl ? (
                   <button
                     onClick={handleDownload}
-                    className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-green-600 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-emerald-500/25 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-emerald-500/30"
+                    className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/25 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-blue-500/30"
                   >
                     <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -336,7 +344,7 @@ export default function CompressPdfPage() {
                   <button
                     onClick={handleCompress}
                     disabled={!file || isCompressing}
-                    className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-green-600 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-emerald-500/25 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-emerald-500/30 disabled:pointer-events-none disabled:opacity-40"
+                    className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/25 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-blue-500/30 disabled:pointer-events-none disabled:opacity-40"
                   >
                     {isCompressing ? (
                       <>
