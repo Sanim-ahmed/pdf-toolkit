@@ -145,15 +145,26 @@ async def compress(
             raise RuntimeError("Ghostscript produced an empty output file.")
 
         ratio = (1 - compressed_size / len(content)) * 100 if len(content) > 0 else 0
-        logger.debug(
-            "Compressed size: %d bytes (%.2f KB), reduction: %.1f%%",
-            compressed_size,
-            compressed_size / 1024,
-            ratio,
-        )
 
-        with open(tmp_output, "rb") as f:
-            pdf_bytes = f.read()
+        if compressed_size < len(content):
+            with open(tmp_output, "rb") as f:
+                pdf_bytes = f.read()
+            effective_size = compressed_size
+            effective_ratio = ratio
+            compression_applied = True
+            logger.debug(
+                "Compressed size: %d bytes (%.2f KB), reduction: %.1f%%",
+                compressed_size, compressed_size / 1024, ratio,
+            )
+        else:
+            pdf_bytes = content
+            effective_size = len(content)
+            effective_ratio = 0.0
+            compression_applied = False
+            logger.debug(
+                "Compressed size (%d) >= original (%d) — returning original.",
+                compressed_size, len(content),
+            )
 
         output_filename = os.path.splitext(file.filename or "document")[0] + ".pdf"
 
@@ -165,9 +176,10 @@ async def compress(
             headers={
                 "Content-Disposition": f'attachment; filename="{output_filename}"',
                 "X-Original-Size": str(len(content)),
-                "X-Compressed-Size": str(compressed_size),
-                "X-Compression-Ratio": f"{ratio:.1f}",
+                "X-Compressed-Size": str(effective_size),
+                "X-Compression-Ratio": f"{effective_ratio:.1f}",
                 "X-Compression-Time": f"{elapsed:.2f}",
+                "X-Compression-Applied": str(compression_applied).lower(),
             },
         )
 

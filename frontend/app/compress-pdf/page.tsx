@@ -17,6 +17,7 @@ interface Stats {
   compressedSize: number;
   ratio: number;
   time: number;
+  compressionApplied: boolean;
 }
 
 const PRESETS = [
@@ -113,6 +114,7 @@ export default function CompressPdfPage() {
         throw new Error(err.detail || "Compression failed");
       }
 
+      const compressionApplied = res.headers.get("X-Compression-Applied") !== "false";
       const blob = await res.blob();
       const compressedSize = blob.size;
       const originalSize = file.file.size;
@@ -121,7 +123,7 @@ export default function CompressPdfPage() {
 
       const url = URL.createObjectURL(blob);
       setDownloadUrl(url);
-      setStats({ originalSize, compressedSize, ratio, time });
+      setStats({ originalSize, compressedSize, ratio, time, compressionApplied });
     } catch (e) {
       console.error("Compression error:", e);
       setError(e instanceof Error ? e.message : "Failed to compress PDF");
@@ -302,30 +304,37 @@ export default function CompressPdfPage() {
                 )}
 
                 {stats && (
-                  <div className="mt-5 grid grid-cols-2 gap-3 rounded-xl border border-blue-500/20 bg-blue-500/[0.04] p-4">
-                    <div>
-                      <p className="text-xs text-slate-500">Original Size</p>
-                      <p className="text-sm font-medium text-white">{formatSize(stats.originalSize)}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-slate-500">Compressed Size</p>
-                      <p className="text-sm font-medium text-white">{formatSize(stats.compressedSize)}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-slate-500">Reduction</p>
-                      <p className="text-sm font-medium text-blue-400">{stats.ratio.toFixed(1)}%</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-slate-500">Compression Ratio</p>
-                      <p className="text-sm font-medium text-white">
-                        {stats.compressedSize > 0
-                          ? (stats.originalSize / stats.compressedSize).toFixed(2) + "x"
-                          : "N/A"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-slate-500">Processing Time</p>
-                      <p className="text-sm font-medium text-white">{stats.time.toFixed(2)}s</p>
+                  <div className="mt-5 rounded-xl border border-blue-500/20 bg-blue-500/[0.04] p-4">
+                    {!stats.compressionApplied && (
+                      <div className="mb-3 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs text-amber-400">
+                        This file could not be compressed further — the original is returned.
+                      </div>
+                    )}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <p className="text-xs text-slate-500">Original Size</p>
+                        <p className="text-sm font-medium text-white">{formatSize(stats.originalSize)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-500">Compressed Size</p>
+                        <p className="text-sm font-medium text-white">{formatSize(stats.compressedSize)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-500">Reduction</p>
+                        <p className="text-sm font-medium text-blue-400">{stats.ratio.toFixed(1)}%</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-500">Compression Ratio</p>
+                        <p className="text-sm font-medium text-white">
+                          {stats.compressedSize > 0
+                            ? (stats.originalSize / stats.compressedSize).toFixed(2) + "x"
+                            : "N/A"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-500">Processing Time</p>
+                        <p className="text-sm font-medium text-white">{stats.time.toFixed(2)}s</p>
+                      </div>
                     </div>
                   </div>
                 )}
