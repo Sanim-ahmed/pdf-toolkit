@@ -52,6 +52,12 @@
       "regex": "^/merge\\-pdf(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/merge\\-pdf(?:/)?$"
+    },
+    {
+      "page": "/split-pdf",
+      "regex": "^/split\\-pdf(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/split\\-pdf(?:/)?$"
     }
   ],
   "dataRoutes": [],

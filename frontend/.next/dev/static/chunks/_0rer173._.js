@@ -636,7 +636,7 @@ function MergePdfPage() {
                 files.forEach({
                     "MergePdfPage.useCallback[handleMerge]": (f)=>formData.append("files", f.file)
                 }["MergePdfPage.useCallback[handleMerge]"]);
-                const res = await fetch("http://localhost:8000/api/pdf/merge", {
+                const res = await fetch("https://pdf-toolkit-backend-tma2.onrender.com/api/pdf/merge", {
                     method: "POST",
                     body: formData
                 });

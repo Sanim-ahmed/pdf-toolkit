@@ -54,6 +54,15 @@ type LayoutConfig<Route extends LayoutRoutes = LayoutRoutes> = {
   type __Unused = __Check
 }
 
+// Validate ../../app/split-pdf/page.tsx
+{
+  type __IsExpected<Specific extends AppPageConfig<"/split-pdf">> = Specific
+  const handler = {} as typeof import("../../app/split-pdf/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
 
 
 

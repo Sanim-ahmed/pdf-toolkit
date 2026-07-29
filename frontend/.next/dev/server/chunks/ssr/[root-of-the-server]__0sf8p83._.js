@@ -470,6 +470,7 @@ const tools = [
         name: "Split PDF",
         description: "Separate a PDF into individual pages or extract specific page ranges.",
         gradient: "bg-gradient-to-br from-pink-500 to-pink-600",
+        href: "/split-pdf",
         icon: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])("svg", {
             className: "h-7 w-7",
             fill: "none",
@@ -482,12 +483,12 @@ const tools = [
                 d: "M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
             }, void 0, false, {
                 fileName: "[project]/components/ToolGrid.tsx",
-                lineNumber: 41,
+                lineNumber: 42,
                 columnNumber: 9
             }, ("TURBOPACK compile-time value", void 0))
         }, void 0, false, {
             fileName: "[project]/components/ToolGrid.tsx",
-            lineNumber: 40,
+            lineNumber: 41,
             columnNumber: 7
         }, ("TURBOPACK compile-time value", void 0))
     },
@@ -507,12 +508,12 @@ const tools = [
                 d: "M19 14l-7 7m0 0l-7-7m7 7V3"
             }, void 0, false, {
                 fileName: "[project]/components/ToolGrid.tsx",
-                lineNumber: 51,
+                lineNumber: 52,
                 columnNumber: 9
             }, ("TURBOPACK compile-time value", void 0))
         }, void 0, false, {
             fileName: "[project]/components/ToolGrid.tsx",
-            lineNumber: 50,
+            lineNumber: 51,
             columnNumber: 7
         }, ("TURBOPACK compile-time value", void 0))
     },
@@ -532,12 +533,12 @@ const tools = [
                 d: "M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"
             }, void 0, false, {
                 fileName: "[project]/components/ToolGrid.tsx",
-                lineNumber: 61,
+                lineNumber: 62,
                 columnNumber: 9
             }, ("TURBOPACK compile-time value", void 0))
         }, void 0, false, {
             fileName: "[project]/components/ToolGrid.tsx",
-            lineNumber: 60,
+            lineNumber: 61,
             columnNumber: 7
         }, ("TURBOPACK compile-time value", void 0))
     },
@@ -557,12 +558,12 @@ const tools = [
                 d: "M4 6h16M4 12h16M4 18h7"
             }, void 0, false, {
                 fileName: "[project]/components/ToolGrid.tsx",
-                lineNumber: 71,
+                lineNumber: 72,
                 columnNumber: 9
             }, ("TURBOPACK compile-time value", void 0))
         }, void 0, false, {
             fileName: "[project]/components/ToolGrid.tsx",
-            lineNumber: 70,
+            lineNumber: 71,
             columnNumber: 7
         }, ("TURBOPACK compile-time value", void 0))
     },
@@ -582,12 +583,12 @@ const tools = [
                 d: "M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
             }, void 0, false, {
                 fileName: "[project]/components/ToolGrid.tsx",
-                lineNumber: 81,
+                lineNumber: 82,
                 columnNumber: 9
             }, ("TURBOPACK compile-time value", void 0))
         }, void 0, false, {
             fileName: "[project]/components/ToolGrid.tsx",
-            lineNumber: 80,
+            lineNumber: 81,
             columnNumber: 7
         }, ("TURBOPACK compile-time value", void 0))
     }
@@ -603,12 +604,12 @@ function ToolGrid() {
                     className: "absolute left-1/2 top-1/2 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-indigo-500/[0.04] blur-[100px]"
                 }, void 0, false, {
                     fileName: "[project]/components/ToolGrid.tsx",
-                    lineNumber: 91,
+                    lineNumber: 92,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/components/ToolGrid.tsx",
-                lineNumber: 90,
+                lineNumber: 91,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -622,7 +623,7 @@ function ToolGrid() {
                                 children: "Tools"
                             }, void 0, false, {
                                 fileName: "[project]/components/ToolGrid.tsx",
-                                lineNumber: 96,
+                                lineNumber: 97,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])("h2", {
@@ -630,7 +631,7 @@ function ToolGrid() {
                                 children: "Everything you need for PDFs"
                             }, void 0, false, {
                                 fileName: "[project]/components/ToolGrid.tsx",
-                                lineNumber: 99,
+                                lineNumber: 100,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -638,13 +639,13 @@ function ToolGrid() {
                                 children: "Powerful tools to handle any PDF task. Fast, free, and secure."
                             }, void 0, false, {
                                 fileName: "[project]/components/ToolGrid.tsx",
-                                lineNumber: 102,
+                                lineNumber: 103,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/components/ToolGrid.tsx",
-                        lineNumber: 95,
+                        lineNumber: 96,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -657,24 +658,24 @@ function ToolGrid() {
                                 href: "href" in tool ? tool.href : undefined
                             }, tool.name, false, {
                                 fileName: "[project]/components/ToolGrid.tsx",
-                                lineNumber: 109,
+                                lineNumber: 110,
                                 columnNumber: 13
                             }, this))
                     }, void 0, false, {
                         fileName: "[project]/components/ToolGrid.tsx",
-                        lineNumber: 107,
+                        lineNumber: 108,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/components/ToolGrid.tsx",
-                lineNumber: 94,
+                lineNumber: 95,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/components/ToolGrid.tsx",
-        lineNumber: 89,
+        lineNumber: 90,
         columnNumber: 5
     }, this);
 }

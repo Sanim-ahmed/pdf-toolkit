@@ -83,6 +83,7 @@
     --color-purple-400: #c07eff;
     --color-purple-500: #ac4bff;
     --color-purple-600: #9810fa;
+    --color-pink-400: #fb64b6;
     --color-pink-500: #f6339a;
     --color-pink-600: #e30076;
     --color-rose-500: #ff2357;
@@ -159,6 +160,7 @@
       --color-purple-400: lab(63.6946% 47.6127 -59.2066);
       --color-purple-500: lab(52.0183% 66.11 -78.2316);
       --color-purple-600: lab(43.0295% 75.21 -86.5669);
+      --color-pink-400: lab(64.5597% 64.3615 -12.7988);
       --color-pink-500: lab(56.9303% 76.8162 -8.07021);
       --color-pink-600: lab(49.5493% 79.8381 2.31768);
       --color-rose-500: lab(56.101% 79.4328 31.4532);
@@ -496,6 +498,10 @@
     margin-top: var(--spacing);
   }
 
+  .mt-1\.5 {
+    margin-top: calc(var(--spacing) * 1.5);
+  }
+
   .mt-2 {
     margin-top: calc(var(--spacing) * 2);
   }
@@ -530,6 +536,10 @@
 
   .mt-20 {
     margin-top: calc(var(--spacing) * 20);
+  }
+
+  .mb-2 {
+    margin-bottom: calc(var(--spacing) * 2);
   }
 
   .mb-3 {
@@ -905,6 +915,20 @@
     }
   }
 
+  .border-pink-500 {
+    border-color: var(--color-pink-500);
+  }
+
+  .border-pink-500\/20 {
+    border-color: #f6339a33;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .border-pink-500\/20 {
+      border-color: color-mix(in oklab, var(--color-pink-500) 20%, transparent);
+    }
+  }
+
   .border-purple-500 {
     border-color: var(--color-purple-500);
   }
@@ -991,6 +1015,26 @@
     }
   }
 
+  .bg-pink-500\/10 {
+    background-color: #f6339a1a;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .bg-pink-500\/10 {
+      background-color: color-mix(in oklab, var(--color-pink-500) 10%, transparent);
+    }
+  }
+
+  .bg-pink-500\/\[0\.08\] {
+    background-color: #f6339a14;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .bg-pink-500\/\[0\.08\] {
+      background-color: color-mix(in oklab, var(--color-pink-500) 8%, transparent);
+    }
+  }
+
   .bg-purple-500\/10 {
     background-color: #ac4bff1a;
   }
@@ -1052,6 +1096,16 @@
   @supports (color: color-mix(in lab, red, red)) {
     .bg-white\/\[0\.02\] {
       background-color: color-mix(in oklab, var(--color-white) 2%, transparent);
+    }
+  }
+
+  .bg-white\/\[0\.03\] {
+    background-color: #ffffff08;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .bg-white\/\[0\.03\] {
+      background-color: color-mix(in oklab, var(--color-white) 3%, transparent);
     }
   }
 
@@ -1347,6 +1401,20 @@
     color: var(--color-indigo-400);
   }
 
+  .text-pink-400 {
+    color: var(--color-pink-400);
+  }
+
+  .text-pink-500\/60 {
+    color: #f6339a99;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .text-pink-500\/60 {
+      color: color-mix(in oklab, var(--color-pink-500) 60%, transparent);
+    }
+  }
+
   .text-purple-400 {
     color: var(--color-purple-400);
   }
@@ -1396,6 +1464,10 @@
   .antialiased {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+  .placeholder-slate-600::placeholder {
+    color: var(--color-slate-600);
   }
 
   .opacity-0 {
@@ -1452,6 +1524,16 @@
   @supports (color: color-mix(in lab, red, red)) {
     .shadow-indigo-500\/25 {
       --tw-shadow-color: color-mix(in oklab, color-mix(in oklab, var(--color-indigo-500) 25%, transparent) var(--tw-shadow-alpha), transparent);
+    }
+  }
+
+  .shadow-pink-500\/10 {
+    --tw-shadow-color: #f6339a1a;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .shadow-pink-500\/10 {
+      --tw-shadow-color: color-mix(in oklab, color-mix(in oklab, var(--color-pink-500) 10%, transparent) var(--tw-shadow-alpha), transparent);
     }
   }
 
@@ -1525,6 +1607,11 @@
   .duration-300 {
     --tw-duration: .3s;
     transition-duration: .3s;
+  }
+
+  .outline-none {
+    --tw-outline-style: none;
+    outline-style: none;
   }
 
   @media (hover: hover) {
@@ -1603,6 +1690,26 @@
       }
     }
 
+    .hover\:border-pink-500\/20:hover {
+      border-color: #f6339a33;
+    }
+
+    @supports (color: color-mix(in lab, red, red)) {
+      .hover\:border-pink-500\/20:hover {
+        border-color: color-mix(in oklab, var(--color-pink-500) 20%, transparent);
+      }
+    }
+
+    .hover\:border-pink-500\/40:hover {
+      border-color: #f6339a66;
+    }
+
+    @supports (color: color-mix(in lab, red, red)) {
+      .hover\:border-pink-500\/40:hover {
+        border-color: color-mix(in oklab, var(--color-pink-500) 40%, transparent);
+      }
+    }
+
     .hover\:border-purple-500\/20:hover {
       border-color: #ac4bff33;
     }
@@ -1630,6 +1737,16 @@
     @supports (color: color-mix(in lab, red, red)) {
       .hover\:bg-indigo-500\/20:hover {
         background-color: color-mix(in oklab, var(--color-indigo-500) 20%, transparent);
+      }
+    }
+
+    .hover\:bg-pink-500\/\[0\.04\]:hover {
+      background-color: #f6339a0a;
+    }
+
+    @supports (color: color-mix(in lab, red, red)) {
+      .hover\:bg-pink-500\/\[0\.04\]:hover {
+        background-color: color-mix(in oklab, var(--color-pink-500) 4%, transparent);
       }
     }
 
@@ -1736,6 +1853,41 @@
       .hover\:shadow-indigo-500\/\[0\.08\]:hover {
         --tw-shadow-color: color-mix(in oklab, color-mix(in oklab, var(--color-indigo-500) 8%, transparent) var(--tw-shadow-alpha), transparent);
       }
+    }
+  }
+
+  .focus\:border-pink-500\/50:focus {
+    border-color: #f6339a80;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .focus\:border-pink-500\/50:focus {
+      border-color: color-mix(in oklab, var(--color-pink-500) 50%, transparent);
+    }
+  }
+
+  .focus\:bg-pink-500\/\[0\.04\]:focus {
+    background-color: #f6339a0a;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .focus\:bg-pink-500\/\[0\.04\]:focus {
+      background-color: color-mix(in oklab, var(--color-pink-500) 4%, transparent);
+    }
+  }
+
+  .focus\:ring-1:focus {
+    --tw-ring-shadow: var(--tw-ring-inset, ) 0 0 0 calc(1px + var(--tw-ring-offset-width)) var(--tw-ring-color, currentcolor);
+    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+  }
+
+  .focus\:ring-pink-500\/20:focus {
+    --tw-ring-color: #f6339a33;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .focus\:ring-pink-500\/20:focus {
+      --tw-ring-color: color-mix(in oklab, var(--color-pink-500) 20%, transparent);
     }
   }
 
