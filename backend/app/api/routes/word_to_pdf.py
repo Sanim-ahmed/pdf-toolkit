@@ -17,6 +17,25 @@ DOCX_MIME_TYPES = {
     "application/octet-stream",
 }
 
+LIBREOFFICE_BINARIES = ["soffice", "libreoffice"]
+
+
+def _find_libreoffice() -> str | None:
+    for name in LIBREOFFICE_BINARIES:
+        path = shutil.which(name)
+        if path:
+            return path
+    return None
+
+
+LIBREOFFICE_BIN = _find_libreoffice()
+if LIBREOFFICE_BIN is None:
+    logger.warning(
+        "LibreOffice not found on PATH (tried: %s). "
+        "Word to PDF conversion will fail until it is installed.",
+        ", ".join(LIBREOFFICE_BINARIES),
+    )
+
 
 def cleanup(paths: list[str]) -> None:
     for p in paths:
@@ -32,6 +51,12 @@ def cleanup(paths: list[str]) -> None:
 
 @router.post("")
 async def word_to_pdf(file: UploadFile = File(...), background_tasks: BackgroundTasks = BackgroundTasks()):
+    if LIBREOFFICE_BIN is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Word to PDF conversion is unavailable: LibreOffice is not installed on the server.",
+        )
+
     if file.content_type not in DOCX_MIME_TYPES and not (file.filename or "").lower().endswith(".docx"):
         raise HTTPException(
             status_code=400,
@@ -49,14 +74,18 @@ async def word_to_pdf(file: UploadFile = File(...), background_tasks: Background
             f.write(content)
 
         result = subprocess.run(
-            ["soffice", "--headless", "--convert-to", "pdf", "--outdir", tmp_dir, docx_path],
+            [LIBREOFFICE_BIN, "--headless", "--convert-to", "pdf", "--outdir", tmp_dir, docx_path],
             capture_output=True,
             text=True,
             timeout=60,
         )
 
         if result.returncode != 0:
-            logger.error("LibreOffice conversion failed: stderr=%s stdout=%s", result.stderr.strip(), result.stdout.strip())
+            logger.error(
+                "LibreOffice conversion failed: stderr=%s stdout=%s",
+                result.stderr.strip(),
+                result.stdout.strip(),
+            )
             raise RuntimeError(f"LibreOffice conversion failed: {result.stderr.strip()}")
 
         pdf_filename = os.path.splitext(file.filename or "document")[0] + ".pdf"
