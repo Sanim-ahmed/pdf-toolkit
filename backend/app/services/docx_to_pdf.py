@@ -1,8 +1,11 @@
 import io
+import os
 
 from docx import Document as DocxDocument
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from fpdf import FPDF
+
+_FONTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "fonts")
 
 
 def _resolve_alignment(docx_alignment) -> str:
@@ -24,6 +27,12 @@ def convert(docx_bytes: bytes) -> bytes:
     doc = DocxDocument(io.BytesIO(docx_bytes))
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=20)
+
+    pdf.add_font("DejaVu", "", os.path.join(_FONTS_DIR, "DejaVuSans.ttf"), uni=True)
+    pdf.add_font("DejaVu", "B", os.path.join(_FONTS_DIR, "DejaVuSans-Bold.ttf"), uni=True)
+    pdf.add_font("DejaVu", "I", os.path.join(_FONTS_DIR, "DejaVuSans-Oblique.ttf"), uni=True)
+    pdf.add_font("DejaVu", "BI", os.path.join(_FONTS_DIR, "DejaVuSans-BoldOblique.ttf"), uni=True)
+
     pdf.add_page()
 
     for para in doc.paragraphs:
@@ -33,9 +42,9 @@ def convert(docx_bytes: bytes) -> bytes:
         if is_heading:
             level = int(style_name.replace("heading", "").strip()) if any(c.isdigit() for c in style_name) else 1
             size, bold = _heading_level_to_size(level)
-            pdf.set_font("Helvetica", "B" if bold else "", size)
+            pdf.set_font("DejaVu", "B" if bold else "", size)
         else:
-            pdf.set_font("Helvetica", "", 12)
+            pdf.set_font("DejaVu", "", 12)
 
         align = _resolve_alignment(para.alignment)
         text = para.text.strip()
