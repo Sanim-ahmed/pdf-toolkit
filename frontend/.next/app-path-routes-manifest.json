@@ -6,6 +6,7 @@
   "/image-to-pdf/page": "/image-to-pdf",
   "/merge-pdf/page": "/merge-pdf",
   "/page": "/",
+  "/pdf-to-image/page": "/pdf-to-image",
   "/pdf-to-text/page": "/pdf-to-text",
   "/pdf-to-word/page": "/pdf-to-word",
   "/split-pdf/page": "/split-pdf",

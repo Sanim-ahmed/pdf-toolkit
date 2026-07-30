@@ -66,6 +66,12 @@
       "namedRegex": "^/merge\\-pdf(?:/)?$"
     },
     {
+      "page": "/pdf-to-image",
+      "regex": "^/pdf\\-to\\-image(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/pdf\\-to\\-image(?:/)?$"
+    },
+    {
       "page": "/pdf-to-text",
       "regex": "^/pdf\\-to\\-text(?:/)?$",
       "routeKeys": {},

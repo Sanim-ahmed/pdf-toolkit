@@ -72,6 +72,15 @@ type LayoutConfig<Route extends LayoutRoutes = LayoutRoutes> = {
   type __Unused = __Check
 }
 
+// Validate ../../app/pdf-to-image/page.tsx
+{
+  type __IsExpected<Specific extends AppPageConfig<"/pdf-to-image">> = Specific
+  const handler = {} as typeof import("../../app/pdf-to-image/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
 // Validate ../../app/pdf-to-text/page.tsx
 {
   type __IsExpected<Specific extends AppPageConfig<"/pdf-to-text">> = Specific
