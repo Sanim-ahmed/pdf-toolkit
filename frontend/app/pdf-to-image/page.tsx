@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://pdf-toolkit-backend-docker.onrender.com";
+import SuccessMessage from "@/components/SuccessMessage";
+import ErrorMessage from "@/components/ErrorMessage";
+import { API_BASE, formatSize, friendlyError } from "@/lib/constants";
 
 interface Stats {
   pagesConverted: number;
@@ -25,12 +26,6 @@ const DPIS = [
   { value: 300, label: "300 DPI", desc: "Highest quality" },
 ];
 
-function formatSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
 export default function PdfToImagePage() {
   const [file, setFile] = useState<{ file: File; name: string; size: string } | null>(null);
   const [fmt, setFmt] = useState("png");
@@ -41,18 +36,24 @@ export default function PdfToImagePage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [isMultiPage, setIsMultiPage] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+  const [progressText, setProgressText] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+  const downloadUrlRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (downloadUrlRef.current) URL.revokeObjectURL(downloadUrlRef.current);
+    };
+  }, []);
 
   const handleFile = useCallback((f: File) => {
     if (f.type !== "application/pdf" && !f.name.toLowerCase().endsWith(".pdf")) return;
-    setFile({
-      file: f,
-      name: f.name,
-      size: formatSize(f.size),
-    });
+    setFile({ file: f, name: f.name, size: formatSize(f.size) });
     setDownloadUrl(null);
     setStats(null);
     setError(null);
+    setSuccess(false);
   }, []);
 
   const addFile = useCallback(
@@ -70,6 +71,7 @@ export default function PdfToImagePage() {
     setDownloadUrl(null);
     setStats(null);
     setError(null);
+    setSuccess(false);
   }, []);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -105,6 +107,8 @@ export default function PdfToImagePage() {
     setError(null);
     setDownloadUrl(null);
     setStats(null);
+    setSuccess(false);
+    setProgressText("Uploading...");
 
     try {
       const formData = new FormData();
@@ -112,6 +116,7 @@ export default function PdfToImagePage() {
       formData.append("fmt", fmt);
       formData.append("dpi", String(dpi));
 
+      setProgressText("Processing...");
       const res = await fetch(`${API_BASE}/api/pdf/to-image`, {
         method: "POST",
         body: formData,
@@ -122,9 +127,13 @@ export default function PdfToImagePage() {
         throw new Error(err.detail || "Conversion failed");
       }
 
+      setProgressText("Preparing download...");
       const blob = await res.blob();
+      if (downloadUrlRef.current) URL.revokeObjectURL(downloadUrlRef.current);
       const url = URL.createObjectURL(blob);
+      downloadUrlRef.current = url;
       setDownloadUrl(url);
+      setSuccess(true);
 
       const pages = parseInt(res.headers.get("x-pages-converted") || "1");
       const multi = pages > 1;
@@ -138,10 +147,10 @@ export default function PdfToImagePage() {
         time: parseFloat(res.headers.get("x-processing-time") || "0"),
       });
     } catch (e) {
-      console.error("Conversion error:", e);
-      setError(e instanceof Error ? e.message : "Failed to convert PDF");
+      setError(friendlyError(e instanceof Error ? e.message : "Failed to convert PDF"));
     } finally {
       setIsConverting(false);
+      setProgressText("");
     }
   }, [file, isConverting, fmt, dpi]);
 
@@ -164,245 +173,86 @@ export default function PdfToImagePage() {
         <section className="relative overflow-hidden px-6 pb-24 pt-28 md:pt-36">
           <div className="pointer-events-none absolute inset-0 -z-10 bg-mesh" />
           <div className="pointer-events-none absolute left-1/2 top-0 -z-10 h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-blue-500/[0.06] blur-[120px]" />
-
           <div className="mx-auto max-w-3xl text-center">
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-blue-500/20 bg-blue-500/10 px-4 py-1.5 text-sm font-medium text-blue-400">
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
               PDF to Image
             </div>
-
-            <h1 className="text-4xl font-extrabold tracking-tight md:text-5xl">
-              PDF to
-              <br />
-              <span className="gradient-text">Image</span>
-            </h1>
-
-            <p className="mx-auto mt-5 max-w-lg text-slate-400">
-              Convert PDF pages into high-quality PNG or JPEG images.
-            </p>
+            <h1 className="text-4xl font-extrabold tracking-tight md:text-5xl">PDF to<br /><span className="gradient-text">Image</span></h1>
+            <p className="mx-auto mt-5 max-w-lg text-slate-400">Convert PDF pages into high-quality PNG or JPEG images.</p>
           </div>
-
           <div className="mx-auto mt-12 max-w-2xl">
-            <div
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-              onClick={() => inputRef.current?.click()}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") inputRef.current?.click();
-              }}
-              className={`relative cursor-pointer rounded-2xl border-2 border-dashed p-10 text-center transition-all duration-300 ${
-                isDragging
-                  ? "border-blue-500 bg-blue-500/[0.08] scale-[1.02] shadow-2xl shadow-blue-500/10"
-                  : "border-white/10 bg-white/[0.02] hover:border-blue-500/40 hover:bg-blue-500/[0.04]"
-              }`}
-            >
-              <input
-                ref={inputRef}
-                type="file"
-                accept=".pdf"
-                onChange={handleFileSelect}
-                className="hidden"
-              />
-
+            <div onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}
+              onClick={() => inputRef.current?.click()} role="button" tabIndex={0}
+              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") inputRef.current?.click(); }}
+              className={`relative cursor-pointer rounded-2xl border-2 border-dashed p-10 text-center transition-all duration-300 ${isDragging ? "border-blue-500 bg-blue-500/[0.08] scale-[1.02] shadow-2xl shadow-blue-500/10" : "border-white/10 bg-white/[0.02] hover:border-blue-500/40 hover:bg-blue-500/[0.04]"}`}>
+              <input ref={inputRef} type="file" accept=".pdf" onChange={handleFileSelect} className="hidden" />
               <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-500/10">
-                <svg
-                  className={`h-8 w-8 transition-colors ${
-                    isDragging ? "text-blue-400" : "text-blue-500/60"
-                  }`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1.5}
-                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                  />
-                </svg>
+                <svg className={`h-8 w-8 transition-colors ${isDragging ? "text-blue-400" : "text-blue-500/60"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
               </div>
-
-              <p className="text-base font-medium text-white">
-                {isDragging ? "Drop your PDF here" : "Drag & drop a PDF file here"}
-              </p>
-              <p className="mt-2 text-sm text-slate-500">
-                or{" "}
-                <span className="text-blue-400 underline underline-offset-2">
-                  browse files
-                </span>
-              </p>
-              <p className="mt-1 text-xs text-slate-600">
-                Supports PDF files up to 100 MB
-              </p>
+              <p className="text-base font-medium text-white">{isDragging ? "Drop your PDF here" : "Drag & drop a PDF file here"}</p>
+              <p className="mt-2 text-sm text-slate-500">or <span className="text-blue-400 underline underline-offset-2">browse files</span></p>
+              <p className="mt-1 text-xs text-slate-600">Supports PDF files up to 100 MB</p>
             </div>
-
             {file && (
               <div className="mt-6">
                 <div className="mb-3 flex items-center justify-between">
                   <p className="text-sm font-medium text-slate-300">1 file selected</p>
-                  <button
-                    onClick={removeFile}
-                    className="text-xs font-medium text-slate-500 transition-colors hover:text-red-400"
-                  >
-                    Clear all
-                  </button>
+                  <button onClick={removeFile} className="text-xs font-medium text-slate-500 transition-colors hover:text-red-400">Clear all</button>
                 </div>
-
                 <ul className="space-y-2" role="list">
                   <li className="glass-card flex items-center gap-4 rounded-xl px-4 py-3 transition-all duration-200 hover:border-blue-500/20">
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 text-blue-400">
-                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={1.5}
-                          d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
-                        />
-                      </svg>
+                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
                     </div>
-
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-white">
-                        {file.name}
-                      </p>
-                      <p className="text-xs text-slate-500">{file.size}</p>
-                    </div>
-
-                    <button
-                      onClick={removeFile}
-                      className="ml-1 rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-red-500/10 hover:text-red-400"
-                      aria-label={`Remove ${file.name}`}
-                    >
-                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
+                    <div className="min-w-0 flex-1"><p className="truncate text-sm font-medium text-white">{file.name}</p><p className="text-xs text-slate-500">{file.size}</p></div>
+                    <button onClick={removeFile} className="ml-1 rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-red-500/10 hover:text-red-400" aria-label={`Remove ${file.name}`}>
+                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                     </button>
                   </li>
                 </ul>
-
                 <div className="mt-5 space-y-3">
                   <p className="text-sm font-medium text-slate-300">Output Format</p>
                   {FORMATS.map((f) => (
-                    <label
-                      key={f.value}
-                      className={`flex cursor-pointer items-center gap-4 rounded-xl border px-4 py-3 transition-all ${
-                        fmt === f.value
-                          ? "border-blue-500/40 bg-blue-500/[0.06]"
-                          : "border-white/10 bg-white/[0.02] hover:border-white/20"
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="format"
-                        value={f.value}
-                        checked={fmt === f.value}
-                        onChange={(e) => setFmt(e.target.value)}
-                        className="h-4 w-4 accent-blue-500"
-                      />
-                      <div>
-                        <p className="text-sm font-medium text-white">{f.label}</p>
-                        <p className="text-xs text-slate-500">{f.desc}</p>
-                      </div>
+                    <label key={f.value} className={`flex cursor-pointer items-center gap-4 rounded-xl border px-4 py-3 transition-all ${fmt === f.value ? "border-blue-500/40 bg-blue-500/[0.06]" : "border-white/10 bg-white/[0.02] hover:border-white/20"}`}>
+                      <input type="radio" name="format" value={f.value} checked={fmt === f.value} onChange={(e) => setFmt(e.target.value)} className="h-4 w-4 accent-blue-500" />
+                      <div><p className="text-sm font-medium text-white">{f.label}</p><p className="text-xs text-slate-500">{f.desc}</p></div>
                     </label>
                   ))}
                 </div>
-
                 <div className="mt-5 space-y-3">
                   <p className="text-sm font-medium text-slate-300">Resolution (DPI)</p>
                   {DPIS.map((d) => (
-                    <label
-                      key={d.value}
-                      className={`flex cursor-pointer items-center gap-4 rounded-xl border px-4 py-3 transition-all ${
-                        dpi === d.value
-                          ? "border-blue-500/40 bg-blue-500/[0.06]"
-                          : "border-white/10 bg-white/[0.02] hover:border-white/20"
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="dpi"
-                        value={d.value}
-                        checked={dpi === d.value}
-                        onChange={(e) => setDpi(Number(e.target.value))}
-                        className="h-4 w-4 accent-blue-500"
-                      />
-                      <div>
-                        <p className="text-sm font-medium text-white">{d.label}</p>
-                        <p className="text-xs text-slate-500">{d.desc}</p>
-                      </div>
+                    <label key={d.value} className={`flex cursor-pointer items-center gap-4 rounded-xl border px-4 py-3 transition-all ${dpi === d.value ? "border-blue-500/40 bg-blue-500/[0.06]" : "border-white/10 bg-white/[0.02] hover:border-white/20"}`}>
+                      <input type="radio" name="dpi" value={d.value} checked={dpi === d.value} onChange={(e) => setDpi(Number(e.target.value))} className="h-4 w-4 accent-blue-500" />
+                      <div><p className="text-sm font-medium text-white">{d.label}</p><p className="text-xs text-slate-500">{d.desc}</p></div>
                     </label>
                   ))}
                 </div>
-
-                {error && (
-                  <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
-                    {error}
-                  </div>
-                )}
-
+                {error && <ErrorMessage error={error} />}
+                {success && <SuccessMessage />}
                 {stats && (
                   <div className="mt-5 rounded-xl border border-blue-500/20 bg-blue-500/[0.04] p-4">
                     <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <p className="text-xs text-slate-500">Pages Converted</p>
-                        <p className="text-sm font-medium text-white">{stats.pagesConverted}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-slate-500">Output Format</p>
-                        <p className="text-sm font-medium text-white uppercase">{stats.outputFormat}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-slate-500">DPI</p>
-                        <p className="text-sm font-medium text-white">{stats.dpi}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-slate-500">Output Size</p>
-                        <p className="text-sm font-medium text-white">{formatSize(stats.outputSize)}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-slate-500">Processing Time</p>
-                        <p className="text-sm font-medium text-white">{stats.time.toFixed(2)}s</p>
-                      </div>
+                      <div><p className="text-xs text-slate-500">Pages Converted</p><p className="text-sm font-medium text-white">{stats.pagesConverted}</p></div>
+                      <div><p className="text-xs text-slate-500">Output Format</p><p className="text-sm font-medium text-white uppercase">{stats.outputFormat}</p></div>
+                      <div><p className="text-xs text-slate-500">DPI</p><p className="text-sm font-medium text-white">{stats.dpi}</p></div>
+                      <div><p className="text-xs text-slate-500">Output Size</p><p className="text-sm font-medium text-white">{formatSize(stats.outputSize)}</p></div>
+                      <div><p className="text-xs text-slate-500">Processing Time</p><p className="text-sm font-medium text-white">{stats.time.toFixed(2)}s</p></div>
                     </div>
                   </div>
                 )}
-
                 {downloadUrl ? (
-                  <button
-                    onClick={handleDownload}
-                    className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-green-600 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-emerald-500/25 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-emerald-500/30"
-                  >
-                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
+                  <button onClick={handleDownload} className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-green-600 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-emerald-500/25 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-emerald-500/30">
+                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                     {isMultiPage ? "Download ZIP" : "Download Image"}
                   </button>
                 ) : (
-                  <button
-                    onClick={handleConvert}
-                    disabled={!file || isConverting}
-                    className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/25 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-blue-500/30 disabled:pointer-events-none disabled:opacity-40"
-                  >
+                  <button onClick={handleConvert} disabled={!file || isConverting} className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/25 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-blue-500/30 disabled:pointer-events-none disabled:opacity-40">
                     {isConverting ? (
-                      <>
-                        <svg className="h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                        </svg>
-                        Converting...
-                      </>
+                      <><svg className="h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>{progressText || "Converting..."}</>
                     ) : (
-                      <>
-                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                        Convert to Images
-                      </>
+                      <><svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>Convert to Images</>
                     )}
                   </button>
                 )}

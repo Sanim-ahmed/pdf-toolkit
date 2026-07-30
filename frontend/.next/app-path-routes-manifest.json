@@ -1,7 +1,9 @@
 {
   "/_global-error/page": "/_global-error",
   "/_not-found/page": "/_not-found",
+  "/about/page": "/about",
   "/compress-pdf/page": "/compress-pdf",
+  "/contact/page": "/contact",
   "/favicon.ico/route": "/favicon.ico",
   "/image-to-pdf/page": "/image-to-pdf",
   "/merge-pdf/page": "/merge-pdf",
@@ -10,7 +12,11 @@
   "/pdf-to-image/page": "/pdf-to-image",
   "/pdf-to-text/page": "/pdf-to-text",
   "/pdf-to-word/page": "/pdf-to-word",
+  "/privacy/page": "/privacy",
+  "/robots.txt/route": "/robots.txt",
+  "/sitemap.xml/route": "/sitemap.xml",
   "/split-pdf/page": "/split-pdf",
+  "/terms/page": "/terms",
   "/text-to-pdf/page": "/text-to-pdf",
   "/word-to-pdf/page": "/word-to-pdf"
 }

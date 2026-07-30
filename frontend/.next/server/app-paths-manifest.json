@@ -1,7 +1,9 @@
 {
   "/_global-error/page": "app/_global-error/page.js",
   "/_not-found/page": "app/_not-found/page.js",
+  "/about/page": "app/about/page.js",
   "/compress-pdf/page": "app/compress-pdf/page.js",
+  "/contact/page": "app/contact/page.js",
   "/favicon.ico/route": "app/favicon.ico/route.js",
   "/image-to-pdf/page": "app/image-to-pdf/page.js",
   "/merge-pdf/page": "app/merge-pdf/page.js",
@@ -10,7 +12,11 @@
   "/pdf-to-image/page": "app/pdf-to-image/page.js",
   "/pdf-to-text/page": "app/pdf-to-text/page.js",
   "/pdf-to-word/page": "app/pdf-to-word/page.js",
+  "/privacy/page": "app/privacy/page.js",
+  "/robots.txt/route": "app/robots.txt/route.js",
+  "/sitemap.xml/route": "app/sitemap.xml/route.js",
   "/split-pdf/page": "app/split-pdf/page.js",
+  "/terms/page": "app/terms/page.js",
   "/text-to-pdf/page": "app/text-to-pdf/page.js",
   "/word-to-pdf/page": "app/word-to-pdf/page.js"
 }
