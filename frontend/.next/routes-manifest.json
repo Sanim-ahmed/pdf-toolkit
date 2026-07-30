@@ -66,6 +66,12 @@
       "namedRegex": "^/merge\\-pdf(?:/)?$"
     },
     {
+      "page": "/ocr",
+      "regex": "^/ocr(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/ocr(?:/)?$"
+    },
+    {
       "page": "/pdf-to-image",
       "regex": "^/pdf\\-to\\-image(?:/)?$",
       "routeKeys": {},

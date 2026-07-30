@@ -5,6 +5,7 @@
   "/favicon.ico/route": "app/favicon.ico/route.js",
   "/image-to-pdf/page": "app/image-to-pdf/page.js",
   "/merge-pdf/page": "app/merge-pdf/page.js",
+  "/ocr/page": "app/ocr/page.js",
   "/page": "app/page.js",
   "/pdf-to-image/page": "app/pdf-to-image/page.js",
   "/pdf-to-text/page": "app/pdf-to-text/page.js",
