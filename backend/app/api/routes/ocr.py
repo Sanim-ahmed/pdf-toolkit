@@ -21,7 +21,8 @@ router = APIRouter(prefix="/ocr", tags=["OCR"])
 
 _MAX_SIZE = 100 * 1024 * 1024
 
-_TESSERACT_CONFIG = "--oem 1 --psm 3"
+_TESSERACT_CONFIG = "--oem 1 --psm 6"
+_MAX_IMAGE_DIMENSION = 4000  # Max pixels on longest edge before downscaling
 
 SUPPORTED_EXTENSIONS = {
     ".pdf",
@@ -87,6 +88,15 @@ async def ocr(
     import pytesseract
     from PIL import Image, ImageOps
 
+    def _preprocess(img: Image.Image) -> Image.Image:
+        img = ImageOps.grayscale(img)
+        if max(img.width, img.height) > _MAX_IMAGE_DIMENSION:
+            scale = _MAX_IMAGE_DIMENSION / max(img.width, img.height)
+            new_w = int(img.width * scale)
+            new_h = int(img.height * scale)
+            img = img.resize((new_w, new_h), Image.LANCZOS)
+        return img
+
     try:
         start = time.perf_counter()
 
@@ -109,8 +119,8 @@ async def ocr(
 
             t_ocr = time.perf_counter()
             if len(images) == 1:
-                img_gray = ImageOps.grayscale(images[0])
-                page_text = pytesseract.image_to_string(img_gray, lang=language, config=_TESSERACT_CONFIG)
+                img_ready = _preprocess(images[0])
+                page_text = pytesseract.image_to_string(img_ready, lang=language, config=_TESSERACT_CONFIG)
                 results = [page_text]
             else:
                 os.environ["OMP_THREAD_LIMIT"] = "1"
@@ -119,7 +129,7 @@ async def ocr(
                     max_workers=min(len(images), os.cpu_count() or 4)
                 ) as executor:
                     futures = [
-                        executor.submit(ocr_func, ImageOps.grayscale(img))
+                        executor.submit(ocr_func, _preprocess(img))
                         for img in images
                     ]
                     results = [f.result() for f in futures]
@@ -144,10 +154,10 @@ async def ocr(
                 )
 
             t_ocr = time.perf_counter()
-            img_gray = ImageOps.grayscale(img)
-            page_text = pytesseract.image_to_string(img_gray, lang=language, config=_TESSERACT_CONFIG)
+            img_ready = _preprocess(img)
+            page_text = pytesseract.image_to_string(img_ready, lang=language, config=_TESSERACT_CONFIG)
             t_ocr_end = time.perf_counter()
-            logger.info("Grayscale + OCR: %.4fs", t_ocr_end - t_ocr)
+            logger.info("Preprocess + OCR: %.4fs", t_ocr_end - t_ocr)
             pages_text = [
                 page_text.strip() if page_text.strip() else "[No text found on this image]"
             ]
