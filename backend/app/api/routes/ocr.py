@@ -4,41 +4,24 @@ import logging
 import os
 import shutil
 import time
+from functools import partial
 from pathlib import Path
 
-from fastapi import APIRouter, BackgroundTasks, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from fastapi.responses import Response
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+if not logger.handlers:
+    _h = logging.StreamHandler()
+    _h.setFormatter(logging.Formatter("%(message)s"))
+    logger.addHandler(_h)
 
 router = APIRouter(prefix="/ocr", tags=["OCR"])
 
 _MAX_SIZE = 100 * 1024 * 1024
 
-_timings: dict[str, float] = {}
-
-
-def _t(label: str) -> None:
-    _timings[label] = time.perf_counter()
-
-
-def _log_timings() -> None:
-    if not _timings:
-        return
-    sorted_keys = sorted(_timings.keys(), key=lambda k: list(_timings.keys()).index(k))
-    total = 0.0
-    prev_label = None
-    prev_val = None
-    for k in sorted_keys:
-        v = _timings[k]
-        if prev_label is not None and prev_val is not None:
-            delta = v - prev_val
-            total += delta
-            logger.info("  ⏱  %s \u2192 %s: %.4fs", prev_label, k, delta)
-        prev_label = k
-        prev_val = v
-    logger.info("  ⏱  TOTAL: %.4fs", total)
-
+_TESSERACT_CONFIG = "--oem 1 --psm 3"
 
 SUPPORTED_EXTENSIONS = {
     ".pdf",
@@ -65,7 +48,6 @@ async def ocr(
     file: UploadFile = File(...),
     language: str = Form("eng"),
     dpi: int = Form(200),
-    background_tasks: BackgroundTasks = BackgroundTasks(),
 ):
     ext = Path(file.filename or "file").suffix.lower()
     if ext not in SUPPORTED_EXTENSIONS:
@@ -94,9 +76,10 @@ async def ocr(
 
     _check_tesseract()
 
-    _t("upload_start")
+    t_upload = time.perf_counter()
     content = await file.read()
-    _t("upload_end")
+    t_upload_end = time.perf_counter()
+    logger.info("Upload: %.4fs (size=%d)", t_upload_end - t_upload, len(content))
 
     if len(content) > _MAX_SIZE:
         raise HTTPException(status_code=400, detail="File exceeds 100 MB limit.")
@@ -105,16 +88,16 @@ async def ocr(
     from PIL import Image, ImageOps
 
     try:
-        _timings.clear()
-        _t("start")
+        start = time.perf_counter()
 
         if ext == ".pdf":
             from pdf2image import convert_from_bytes
 
             try:
-                _t("pdf_to_image_start")
+                t_convert = time.perf_counter()
                 images = convert_from_bytes(content, dpi=dpi)
-                _t("pdf_to_image_end")
+                t_convert_end = time.perf_counter()
+                logger.info("PDF -> images: %.4fs (%d pages)", t_convert_end - t_convert, len(images))
             except Exception as exc:
                 raise HTTPException(
                     status_code=400,
@@ -124,27 +107,24 @@ async def ocr(
             if len(images) == 0:
                 raise HTTPException(status_code=400, detail="PDF has no pages.")
 
-            os.environ["OMP_THREAD_LIMIT"] = "1"
-
-            _t("ocr_start")
+            t_ocr = time.perf_counter()
             if len(images) == 1:
                 img_gray = ImageOps.grayscale(images[0])
-                page_text = pytesseract.image_to_string(img_gray, lang=language)
+                page_text = pytesseract.image_to_string(img_gray, lang=language, config=_TESSERACT_CONFIG)
                 results = [page_text]
             else:
+                os.environ["OMP_THREAD_LIMIT"] = "1"
+                ocr_func = partial(pytesseract.image_to_string, lang=language, config=_TESSERACT_CONFIG)
                 with concurrent.futures.ThreadPoolExecutor(
                     max_workers=min(len(images), os.cpu_count() or 4)
                 ) as executor:
-                    futures = []
-                    for img in images:
-                        img_gray = ImageOps.grayscale(img)
-                        futures.append(
-                            executor.submit(
-                                pytesseract.image_to_string, img_gray, lang=language
-                            )
-                        )
+                    futures = [
+                        executor.submit(ocr_func, ImageOps.grayscale(img))
+                        for img in images
+                    ]
                     results = [f.result() for f in futures]
-            _t("ocr_end")
+            t_ocr_end = time.perf_counter()
+            logger.info("OCR: %.4fs (%d pages)", t_ocr_end - t_ocr, len(images))
 
             pages_text = [
                 r.strip() if r.strip() else "[No text found on this page]"
@@ -152,25 +132,27 @@ async def ocr(
             ]
         else:
             try:
-                _t("image_open_start")
+                t_img = time.perf_counter()
                 img = Image.open(io.BytesIO(content))
                 img.load()
-                _t("image_open_end")
+                t_img_end = time.perf_counter()
+                logger.info("Image load: %.4fs", t_img_end - t_img)
             except Exception as exc:
                 raise HTTPException(
                     status_code=400,
                     detail=f"Corrupt or invalid image file: {exc}",
                 )
 
-            _t("ocr_start")
+            t_ocr = time.perf_counter()
             img_gray = ImageOps.grayscale(img)
-            page_text = pytesseract.image_to_string(img_gray, lang=language)
-            _t("ocr_end")
+            page_text = pytesseract.image_to_string(img_gray, lang=language, config=_TESSERACT_CONFIG)
+            t_ocr_end = time.perf_counter()
+            logger.info("Grayscale + OCR: %.4fs", t_ocr_end - t_ocr)
             pages_text = [
                 page_text.strip() if page_text.strip() else "[No text found on this image]"
             ]
 
-        _t("text_assembly_start")
+        t_assemble = time.perf_counter()
         total_chars = sum(len(t) for t in pages_text)
 
         if len(pages_text) > 1:
@@ -181,10 +163,14 @@ async def ocr(
             output_text = "\n".join(output_lines)
         else:
             output_text = pages_text[0] if pages_text else ""
+        t_assemble_end = time.perf_counter()
+        logger.info("Text assembly: %.4fs", t_assemble_end - t_assemble)
 
-        _t("text_assembly_end")
-
-        _log_timings()
+        elapsed = time.perf_counter() - start
+        logger.info(
+            "OCR — pages=%d, language=%s, chars=%d, total=%.2fs",
+            len(pages_text), language, total_chars, elapsed,
+        )
 
         output_filename = os.path.splitext(file.filename or "document")[0] + ".txt"
 
@@ -195,7 +181,7 @@ async def ocr(
                 "Content-Disposition": f'attachment; filename="{output_filename}"',
                 "X-Pages-Processed": str(len(pages_text)),
                 "X-Chars-Extracted": str(total_chars),
-                "X-Processing-Time": f"{_timings.get('text_assembly_end', 0) - _timings.get('start', 0):.2f}",
+                "X-Processing-Time": f"{elapsed:.2f}",
             },
         )
 
