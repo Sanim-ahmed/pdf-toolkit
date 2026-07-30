@@ -2,8 +2,9 @@ import logging
 import os
 import tempfile
 import time
+from typing import Optional
 
-from fastapi import APIRouter, BackgroundTasks, File, HTTPException, UploadFile
+from fastapi import APIRouter, BackgroundTasks, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 
 logger = logging.getLogger(__name__)
@@ -52,28 +53,7 @@ def decode_content(content: bytes) -> str:
     )
 
 
-@router.post("")
-async def text_to_pdf(
-    file: UploadFile = File(...),
-    background_tasks: BackgroundTasks = BackgroundTasks(),
-):
-    filename = (file.filename or "").lower()
-    if not filename.endswith(".txt") and file.content_type not in TEXT_MIME_TYPES:
-        raise HTTPException(
-            status_code=400,
-            detail=f"File '{file.filename}' is not a valid text file (got {file.content_type}).",
-        )
-
-    content = await file.read()
-
-    if len(content) > _MAX_SIZE:
-        raise HTTPException(status_code=400, detail="File exceeds 10 MB limit.")
-
-    if not content:
-        raise HTTPException(status_code=400, detail="Uploaded file is empty.")
-
-    text = decode_content(content)
-
+def _generate_pdf(text: str, output_filename: str, background_tasks: BackgroundTasks):
     from reportlab.lib.pagesizes import A4
     from reportlab.lib.styles import ParagraphStyle
     from reportlab.lib.units import mm
@@ -145,8 +125,6 @@ async def text_to_pdf(
             elapsed,
         )
 
-        output_filename = os.path.splitext(file.filename or "document")[0] + ".pdf"
-
         background_tasks.add_task(cleanup, [tmp_pdf])
 
         return FileResponse(
@@ -171,3 +149,42 @@ async def text_to_pdf(
             status_code=500,
             detail=f"Failed to generate PDF: {exc}",
         )
+
+
+@router.post("")
+async def text_to_pdf(
+    background_tasks: BackgroundTasks = BackgroundTasks(),
+    file: Optional[UploadFile] = File(None),
+    text: Optional[str] = Form(None),
+):
+    if file is not None:
+        filename = (file.filename or "").lower()
+        if not filename.endswith(".txt") and file.content_type not in TEXT_MIME_TYPES:
+            raise HTTPException(
+                status_code=400,
+                detail=f"File '{file.filename}' is not a valid text file (got {file.content_type}).",
+            )
+
+        content = await file.read()
+
+        if len(content) > _MAX_SIZE:
+            raise HTTPException(status_code=400, detail="File exceeds 10 MB limit.")
+
+        if not content:
+            raise HTTPException(status_code=400, detail="Uploaded file is empty.")
+
+        text_content = decode_content(content)
+        output_filename = os.path.splitext(file.filename or "document")[0] + ".pdf"
+
+        return _generate_pdf(text_content, output_filename, background_tasks)
+
+    if text is not None and text.strip():
+        if len(text.encode("utf-8")) > _MAX_SIZE:
+            raise HTTPException(status_code=400, detail="Text exceeds 10 MB limit.")
+
+        return _generate_pdf(text, "document.pdf", background_tasks)
+
+    raise HTTPException(
+        status_code=400,
+        detail="No text provided. Upload a .txt file or provide text content.",
+    )
