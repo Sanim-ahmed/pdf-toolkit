@@ -54,6 +54,12 @@
       "namedRegex": "^/favicon\\.ico(?:/)?$"
     },
     {
+      "page": "/image-to-pdf",
+      "regex": "^/image\\-to\\-pdf(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/image\\-to\\-pdf(?:/)?$"
+    },
+    {
       "page": "/merge-pdf",
       "regex": "^/merge\\-pdf(?:/)?$",
       "routeKeys": {},

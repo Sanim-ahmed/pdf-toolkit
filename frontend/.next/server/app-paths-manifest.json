@@ -3,6 +3,7 @@
   "/_not-found/page": "app/_not-found/page.js",
   "/compress-pdf/page": "app/compress-pdf/page.js",
   "/favicon.ico/route": "app/favicon.ico/route.js",
+  "/image-to-pdf/page": "app/image-to-pdf/page.js",
   "/merge-pdf/page": "app/merge-pdf/page.js",
   "/page": "app/page.js",
   "/pdf-to-text/page": "app/pdf-to-text/page.js",

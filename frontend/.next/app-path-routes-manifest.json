@@ -3,6 +3,7 @@
   "/_not-found/page": "/_not-found",
   "/compress-pdf/page": "/compress-pdf",
   "/favicon.ico/route": "/favicon.ico",
+  "/image-to-pdf/page": "/image-to-pdf",
   "/merge-pdf/page": "/merge-pdf",
   "/page": "/",
   "/pdf-to-text/page": "/pdf-to-text",
