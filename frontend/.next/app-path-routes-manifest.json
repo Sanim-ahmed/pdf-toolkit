@@ -8,5 +8,6 @@
   "/pdf-to-text/page": "/pdf-to-text",
   "/pdf-to-word/page": "/pdf-to-word",
   "/split-pdf/page": "/split-pdf",
+  "/text-to-pdf/page": "/text-to-pdf",
   "/word-to-pdf/page": "/word-to-pdf"
 }

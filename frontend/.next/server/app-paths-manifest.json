@@ -8,5 +8,6 @@
   "/pdf-to-text/page": "app/pdf-to-text/page.js",
   "/pdf-to-word/page": "app/pdf-to-word/page.js",
   "/split-pdf/page": "app/split-pdf/page.js",
+  "/text-to-pdf/page": "app/text-to-pdf/page.js",
   "/word-to-pdf/page": "app/word-to-pdf/page.js"
 }

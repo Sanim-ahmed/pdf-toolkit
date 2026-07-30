@@ -90,6 +90,15 @@ type LayoutConfig<Route extends LayoutRoutes = LayoutRoutes> = {
   type __Unused = __Check
 }
 
+// Validate ../../app/text-to-pdf/page.tsx
+{
+  type __IsExpected<Specific extends AppPageConfig<"/text-to-pdf">> = Specific
+  const handler = {} as typeof import("../../app/text-to-pdf/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
 // Validate ../../app/word-to-pdf/page.tsx
 {
   type __IsExpected<Specific extends AppPageConfig<"/word-to-pdf">> = Specific

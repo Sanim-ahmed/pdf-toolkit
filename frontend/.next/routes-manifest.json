@@ -78,6 +78,12 @@
       "namedRegex": "^/split\\-pdf(?:/)?$"
     },
     {
+      "page": "/text-to-pdf",
+      "regex": "^/text\\-to\\-pdf(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/text\\-to\\-pdf(?:/)?$"
+    },
+    {
       "page": "/word-to-pdf",
       "regex": "^/word\\-to\\-pdf(?:/)?$",
       "routeKeys": {},
