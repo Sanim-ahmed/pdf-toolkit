@@ -209,6 +209,12 @@ export default function OcrPage() {
                     </label>
                   ))}
                 </div>
+                <div className="mt-5 rounded-xl border border-amber-500/20 bg-amber-500/[0.04] p-4">
+                  <p className="text-sm text-slate-400">
+                    <span className="mr-1.5">⚠️</span>
+                    OCR processing may take some time depending on the image size, document quality, and current server load. Please keep this page open until the extraction is complete.
+                  </p>
+                </div>
                 {error && <ErrorMessage error={error} />}
                 {success && <SuccessMessage />}
                 {stats && (
