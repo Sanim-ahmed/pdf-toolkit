@@ -19,10 +19,22 @@ _GS_CANDIDATES = [
     "/usr/bin/gs",
 ]
 
-_PRESETS = {
-    "high": "/screen",
-    "medium": "/ebook",
-    "low": "/printer",
+_PRESETS: dict[str, dict[str, str | int]] = {
+    "high": {
+        "pdfsettings": "/screen",
+        "downsample_resolution": 72,
+        "jpeg_quality": 50,
+    },
+    "medium": {
+        "pdfsettings": "/ebook",
+        "downsample_resolution": 150,
+        "jpeg_quality": 75,
+    },
+    "low": {
+        "pdfsettings": "/printer",
+        "downsample_resolution": 300,
+        "jpeg_quality": 90,
+    },
 }
 
 _MAX_SIZE = 50 * 1024 * 1024
@@ -85,10 +97,13 @@ async def compress(
 
     gs_path = _find_gs()
     gs_ver = _gs_version(gs_path)
+    cfg = _PRESETS[preset]
+    res = cfg["downsample_resolution"]
+    jpeg_q = cfg["jpeg_quality"]
 
     logger.debug("Ghostscript executable: %s", gs_path)
     logger.debug("Ghostscript version: %s", gs_ver)
-    logger.debug("Compression preset: %s (%s)", preset, _PRESETS[preset])
+    logger.debug("Compression preset: %s (settings=%s, res=%d, jpeg_q=%d)", preset, cfg["pdfsettings"], res, jpeg_q)
     logger.debug("Original size: %d bytes (%.2f KB)", len(content), len(content) / 1024)
 
     tmp_input: str | None = None
@@ -106,11 +121,29 @@ async def compress(
         cmd = [
             gs_path,
             "-sDEVICE=pdfwrite",
-            "-dCompatibilityLevel=1.4",
-            f"-dPDFSETTINGS={_PRESETS[preset]}",
+            f"-dPDFSETTINGS={cfg['pdfsettings']}",
             "-dNOPAUSE",
             "-dQUIET",
             "-dBATCH",
+            "-dDetectDuplicateImages=true",
+            "-dCompressPages=true",
+            "-dDownsampleColorImages=true",
+            "-dDownsampleGrayImages=true",
+            "-dDownsampleMonoImages=true",
+            f"-dColorImageResolution={res}",
+            f"-dGrayImageResolution={res}",
+            f"-dMonoImageResolution={res}",
+            "-dColorImageDownsampleThreshold=1.0",
+            "-dGrayImageDownsampleThreshold=1.0",
+            "-dMonoImageDownsampleThreshold=1.0",
+            "-dAutoFilterColorImages=false",
+            "-dAutoFilterGrayImages=false",
+            "-dColorImageFilter=/DCTEncode",
+            "-dGrayImageFilter=/DCTEncode",
+            "-dMonoImageFilter=/CCITTFaxEncode",
+            f"-dJPEGQ={jpeg_q}",
+            "-dEmbedAllFonts=true",
+            "-dSubsetFonts=true",
             f"-sOutputFile={tmp_output}",
             tmp_input,
         ]

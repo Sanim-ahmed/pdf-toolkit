@@ -5,6 +5,7 @@
   "/favicon.ico/route": "/favicon.ico",
   "/merge-pdf/page": "/merge-pdf",
   "/page": "/",
+  "/pdf-to-text/page": "/pdf-to-text",
   "/pdf-to-word/page": "/pdf-to-word",
   "/split-pdf/page": "/split-pdf",
   "/word-to-pdf/page": "/word-to-pdf"

@@ -6,6 +6,7 @@ from app.api.routes.split import router as split_router
 from app.api.routes.pdf_to_word import router as pdf_to_word_router
 from app.api.routes.word_to_pdf import router as word_to_pdf_router
 from app.api.routes.compress import router as compress_router
+from app.api.routes.pdf_to_text import router as pdf_to_text_router
 
 app = FastAPI(title="PDF Toolkit API", version="1.0.0")
 
@@ -26,6 +27,7 @@ app.include_router(split_router, prefix="/api/pdf")
 app.include_router(pdf_to_word_router, prefix="/api/pdf")
 app.include_router(word_to_pdf_router, prefix="/api/pdf")
 app.include_router(compress_router, prefix="/api/pdf")
+app.include_router(pdf_to_text_router, prefix="/api/pdf")
 
 
 @app.get("/")

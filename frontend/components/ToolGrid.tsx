@@ -70,6 +70,7 @@ const tools = [
     name: "PDF to Text",
     description: "Extract plain text content from any PDF document quickly and accurately.",
     gradient: "bg-gradient-to-br from-cyan-500 to-cyan-600",
+    href: "/pdf-to-text",
     icon: (
       <svg className="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 12h16M4 18h7" />
