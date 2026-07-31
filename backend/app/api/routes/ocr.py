@@ -4,7 +4,7 @@ import logging
 import os
 import shutil
 import time
-from functools import partial
+from functools import lru_cache, partial
 from pathlib import Path
 
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
@@ -37,8 +37,13 @@ SUPPORTED_LANGUAGES: dict[str, str] = {
 _PAGE_SEPARATOR = "========== Page {} =========="
 
 
+@lru_cache(maxsize=1)
+def _tesseract_path() -> str | None:
+    return shutil.which("tesseract")
+
+
 def _check_tesseract() -> None:
-    if shutil.which("tesseract") is None:
+    if _tesseract_path() is None:
         raise RuntimeError(
             "Tesseract OCR is not installed. Install tesseract-ocr on the server."
         )

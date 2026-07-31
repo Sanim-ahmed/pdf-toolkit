@@ -4,6 +4,7 @@ import shutil
 import subprocess
 import tempfile
 import time
+from functools import lru_cache
 
 logger = logging.getLogger(__name__)
 
@@ -16,6 +17,7 @@ _LOCATE_CANDIDATES = [
 ]
 
 
+@lru_cache(maxsize=1)
 def _find_soffice() -> str:
     for candidate in _LOCATE_CANDIDATES:
         found = shutil.which(candidate)
@@ -27,6 +29,7 @@ def _find_soffice() -> str:
     )
 
 
+@lru_cache(maxsize=1)
 def _get_soffice_version(soffice_path: str) -> str:
     try:
         result = subprocess.run(

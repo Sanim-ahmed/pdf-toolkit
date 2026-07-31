@@ -1,10 +1,8 @@
+import io
 import logging
-import os
-import shutil
-import tempfile
 import time
 
-from fastapi import APIRouter, BackgroundTasks, File, HTTPException, UploadFile
+from fastapi import APIRouter, File, HTTPException, UploadFile
 from fastapi.responses import Response
 
 logger = logging.getLogger(__name__)
@@ -16,22 +14,9 @@ MAX_IMAGES = 30
 MAX_TOTAL_SIZE = 100 * 1024 * 1024
 
 
-def cleanup(paths: list[str]) -> None:
-    for p in paths:
-        try:
-            if p and os.path.exists(p):
-                if os.path.isdir(p):
-                    shutil.rmtree(p)
-                else:
-                    os.unlink(p)
-        except OSError:
-            pass
-
-
 @router.post("")
 async def image_to_pdf(
     files: list[UploadFile] = File(...),
-    background_tasks: BackgroundTasks = BackgroundTasks(),
 ):
     if not files:
         raise HTTPException(status_code=400, detail="No images provided.")
@@ -44,11 +29,9 @@ async def image_to_pdf(
 
     from PIL import Image
     import img2pdf
-    import io
 
     contents: list[bytes] = []
     total_size = 0
-    image_exts: list[str] = []
 
     for f in files:
         ext = (f.filename or "").rsplit(".", 1)[-1].lower()
@@ -77,24 +60,14 @@ async def image_to_pdf(
             )
 
         contents.append(content)
-        image_exts.append(ext)
-
-    tmp_paths: list[str] = []
-    tmpdir = tempfile.mkdtemp(prefix="img2pdf_")
 
     try:
-        for i, (content, ext) in enumerate(zip(contents, image_exts)):
-            path = os.path.join(tmpdir, f"img_{i:03d}.{ext}")
-            with open(path, "wb") as f:
-                f.write(content)
-            tmp_paths.append(path)
-
         start = time.perf_counter()
 
         a4_pt = (595.28, 841.89)
         layout_fun = img2pdf.get_layout_fun(pagesize=a4_pt)
         pdf_bytes = img2pdf.convert(
-            tmp_paths,
+            [io.BytesIO(c) for c in contents],
             layout_fun=layout_fun,
         )
 
@@ -108,8 +81,6 @@ async def image_to_pdf(
             output_size / 1024,
             elapsed,
         )
-
-        background_tasks.add_task(cleanup, tmp_paths + [tmpdir])
 
         return Response(
             content=pdf_bytes,
@@ -125,7 +96,6 @@ async def image_to_pdf(
         )
 
     except Exception as exc:
-        cleanup(tmp_paths + [tmpdir])
         logger.error("Image to PDF conversion failed: %s", exc)
         raise HTTPException(
             status_code=500,

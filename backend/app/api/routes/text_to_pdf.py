@@ -53,15 +53,21 @@ def decode_content(content: bytes) -> str:
     )
 
 
+def _ensure_font_registered() -> None:
+    from reportlab.pdfbase import pdfmetrics
+    from reportlab.pdfbase.ttfonts import TTFont
+
+    if "DejaVuSans" not in pdfmetrics.getRegisteredFontNames():
+        pdfmetrics.registerFont(TTFont("DejaVuSans", FONT_PATH))
+
+
 def _generate_pdf(text: str, output_filename: str, background_tasks: BackgroundTasks):
     from reportlab.lib.pagesizes import A4
     from reportlab.lib.styles import ParagraphStyle
     from reportlab.lib.units import mm
-    from reportlab.pdfbase import pdfmetrics
-    from reportlab.pdfbase.ttfonts import TTFont
     from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
 
-    pdfmetrics.registerFont(TTFont("DejaVuSans", FONT_PATH))
+    _ensure_font_registered()
 
     tmp_pdf: str | None = None
 

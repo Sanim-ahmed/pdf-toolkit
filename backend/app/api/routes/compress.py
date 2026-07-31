@@ -4,6 +4,7 @@ import shutil
 import subprocess
 import tempfile
 import time
+from functools import lru_cache
 
 from fastapi import APIRouter, BackgroundTasks, File, Form, HTTPException, UploadFile
 from fastapi.responses import Response
@@ -40,6 +41,7 @@ _PRESETS: dict[str, dict[str, str | int]] = {
 _MAX_SIZE = 50 * 1024 * 1024
 
 
+@lru_cache(maxsize=1)
 def _find_gs() -> str:
     for candidate in _GS_CANDIDATES:
         found = shutil.which(candidate)
@@ -50,6 +52,7 @@ def _find_gs() -> str:
     )
 
 
+@lru_cache(maxsize=1)
 def _gs_version(gs_path: str) -> str:
     try:
         result = subprocess.run(
@@ -67,7 +70,10 @@ def cleanup(paths: list[str]) -> None:
     for p in paths:
         try:
             if p and os.path.exists(p):
-                os.unlink(p)
+                if os.path.isdir(p):
+                    shutil.rmtree(p)
+                else:
+                    os.unlink(p)
         except OSError:
             pass
 

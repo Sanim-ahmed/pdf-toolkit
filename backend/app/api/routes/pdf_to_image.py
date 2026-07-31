@@ -1,12 +1,10 @@
 import io
 import logging
 import os
-import shutil
-import tempfile
 import time
 import zipfile
 
-from fastapi import APIRouter, BackgroundTasks, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from fastapi.responses import Response
 
 logger = logging.getLogger(__name__)
@@ -36,24 +34,11 @@ def _validate_dpi(dpi: int) -> int:
     return dpi
 
 
-def cleanup(paths: list[str]) -> None:
-    for p in paths:
-        try:
-            if p and os.path.exists(p):
-                if os.path.isdir(p):
-                    shutil.rmtree(p)
-                else:
-                    os.unlink(p)
-        except OSError:
-            pass
-
-
 @router.post("")
 async def pdf_to_image(
     file: UploadFile = File(...),
     fmt: str = Form("png"),
     dpi: int = Form(200),
-    background_tasks: BackgroundTasks = BackgroundTasks(),
 ):
     fmt_lower = _validate_format(fmt.lower())
     dpi_val = _validate_dpi(dpi)
@@ -78,17 +63,11 @@ async def pdf_to_image(
     if len(content) == 0:
         raise HTTPException(status_code=400, detail="Uploaded file is empty.")
 
-    tmpdir = tempfile.mkdtemp(prefix="pdf2img_")
-    pdf_path = os.path.join(tmpdir, "input.pdf")
+    from pdf2image import convert_from_bytes
 
     try:
-        with open(pdf_path, "wb") as f:
-            f.write(content)
-
-        from pdf2image import convert_from_path
-
         start = time.perf_counter()
-        images = convert_from_path(pdf_path, dpi=dpi_val)
+        images = convert_from_bytes(content, dpi=dpi_val)
         elapsed = time.perf_counter() - start
 
         if len(images) == 0:
@@ -107,8 +86,6 @@ async def pdf_to_image(
             images[0].save(buf, format=pil_format, **save_kwargs)
             img_bytes = buf.getvalue()
             output_size = len(img_bytes)
-
-            background_tasks.add_task(cleanup, [tmpdir])
 
             logger.info(
                 "PDF to Image — pages=1, format=%s, dpi=%d, output=%.2fKB, time=%.2fs",
@@ -137,8 +114,6 @@ async def pdf_to_image(
         zip_bytes = zip_buf.getvalue()
         output_size = len(zip_bytes)
 
-        background_tasks.add_task(cleanup, [tmpdir])
-
         logger.info(
             "PDF to Image — pages=%d, format=%s, dpi=%d, output=%.2fKB, time=%.2fs",
             len(images), fmt_lower, dpi_val, output_size / 1024, elapsed,
@@ -158,10 +133,8 @@ async def pdf_to_image(
         )
 
     except HTTPException:
-        cleanup([tmpdir])
         raise
     except Exception as exc:
-        cleanup([tmpdir])
         err_msg = str(exc).lower()
         if "password" in err_msg or "encrypt" in err_msg:
             raise HTTPException(

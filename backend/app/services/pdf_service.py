@@ -1,3 +1,4 @@
+import asyncio
 from io import BytesIO
 
 from fastapi import HTTPException, UploadFile
@@ -6,15 +7,18 @@ from pypdf import PdfReader, PdfWriter
 
 async def merge_pdfs(files: list[UploadFile]) -> bytes:
     """Read multiple uploaded PDFs and return the bytes of a single merged PDF."""
-    writer = PdfWriter()
-
     for upload in files:
         if upload.content_type != "application/pdf":
             raise HTTPException(
                 status_code=400,
                 detail=f"File '{upload.filename}' is not a valid PDF (got {upload.content_type}).",
             )
-        content = await upload.read()
+
+    contents = await asyncio.gather(*(upload.read() for upload in files))
+
+    writer = PdfWriter()
+
+    for upload, content in zip(files, contents):
         try:
             reader = PdfReader(BytesIO(content))
         except Exception:
