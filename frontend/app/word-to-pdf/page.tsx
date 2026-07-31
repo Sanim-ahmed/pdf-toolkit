@@ -5,6 +5,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import SuccessMessage from "@/components/SuccessMessage";
 import ErrorMessage from "@/components/ErrorMessage";
+import LoadingOverlay from "@/components/LoadingOverlay";
 import { API_BASE, formatSize, friendlyError } from "@/lib/constants";
 
 export default function WordToPdfPage() {
@@ -14,7 +15,6 @@ export default function WordToPdfPage() {
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const [progressText, setProgressText] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const downloadUrlRef = useRef<string | null>(null);
 
@@ -80,13 +80,11 @@ export default function WordToPdfPage() {
     setError(null);
     setDownloadUrl(null);
     setSuccess(false);
-    setProgressText("Uploading...");
 
     try {
       const formData = new FormData();
       formData.append("file", file.file);
 
-      setProgressText("Processing...");
       const res = await fetch(`${API_BASE}/api/pdf/from-word`, {
         method: "POST",
         body: formData,
@@ -97,7 +95,6 @@ export default function WordToPdfPage() {
         throw new Error(err.detail || "Conversion failed");
       }
 
-      setProgressText("Preparing download...");
       const blob = await res.blob();
       if (downloadUrlRef.current) URL.revokeObjectURL(downloadUrlRef.current);
       const url = URL.createObjectURL(blob);
@@ -108,7 +105,6 @@ export default function WordToPdfPage() {
       setError(friendlyError(e instanceof Error ? e.message : "Conversion failed"));
     } finally {
       setIsConverting(false);
-      setProgressText("");
     }
   }, [file, isConverting]);
 
@@ -154,7 +150,7 @@ export default function WordToPdfPage() {
               <div className="mt-6">
                 <div className="mb-3 flex items-center justify-between">
                   <p className="text-sm font-medium text-slate-300">1 file selected</p>
-                  <button onClick={removeFile} className="text-xs font-medium text-slate-500 transition-colors hover:text-red-400">Clear all</button>
+                  <button onClick={removeFile} disabled={isConverting} className="text-xs font-medium text-slate-500 transition-colors hover:text-red-400 disabled:pointer-events-none disabled:opacity-40">Clear all</button>
                 </div>
                 <ul className="space-y-2" role="list">
                   <li className="glass-card flex items-center gap-4 rounded-xl px-4 py-3 transition-all duration-200 hover:border-indigo-500/20">
@@ -162,11 +158,12 @@ export default function WordToPdfPage() {
                       <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
                     </div>
                     <div className="min-w-0 flex-1"><p className="truncate text-sm font-medium text-white">{file.name}</p><p className="text-xs text-slate-500">{file.size}</p></div>
-                    <button onClick={removeFile} className="ml-1 rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-red-500/10 hover:text-red-400" aria-label={`Remove ${file.name}`}>
+                    <button onClick={removeFile} disabled={isConverting} className="ml-1 rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-red-500/10 hover:text-red-400 disabled:pointer-events-none disabled:opacity-40" aria-label={`Remove ${file.name}`}>
                       <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                     </button>
                   </li>
                 </ul>
+                {isConverting && <LoadingOverlay accent="indigo" />}
                 {error && <ErrorMessage error={error} />}
                 {success && <SuccessMessage />}
                 {downloadUrl ? (
@@ -177,7 +174,7 @@ export default function WordToPdfPage() {
                 ) : (
                   <button onClick={handleConvert} disabled={!file || isConverting} className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-indigo-500/30 disabled:pointer-events-none disabled:opacity-40">
                     {isConverting ? (
-                      <><svg className="h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>{progressText || "Converting..."}</>
+                      "Processing..."
                     ) : (
                       <><svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>Convert to PDF</>
                     )}

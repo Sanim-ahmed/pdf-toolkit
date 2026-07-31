@@ -26,11 +26,3 @@ export function friendlyError(detail: string): string {
     return "Network error. Please check your connection and try again.";
   return "Conversion failed. Please try again.";
 }
-
-export const PROGRESS_STAGES = {
-  uploading: "Uploading...",
-  processing: "Processing...",
-  converting: "Converting...",
-  preparing: "Preparing download...",
-  done: "Complete!",
-} as const;

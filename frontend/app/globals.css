@@ -66,12 +66,40 @@ html {
   100% { background-position: 0% 50%; }
 }
 
+@keyframes progress-indeterminate {
+  0% { transform: translateX(-120%); }
+  60% { transform: translateX(320%); }
+  100% { transform: translateX(320%); }
+}
+
+@keyframes message-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes message-out {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(-8px); }
+}
+
 .animate-float {
   animation: float 6s ease-in-out infinite;
 }
 
 .animate-pulse-glow {
   animation: pulse-glow 4s ease-in-out infinite;
+}
+
+.animate-progress-indeterminate {
+  animation: progress-indeterminate 1.4s ease-in-out infinite;
+}
+
+.animate-message-in {
+  animation: message-in 0.35s ease forwards;
+}
+
+.animate-message-out {
+  animation: message-out 0.3s ease forwards;
 }
 
 .glass-card {

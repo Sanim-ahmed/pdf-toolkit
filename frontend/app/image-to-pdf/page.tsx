@@ -5,6 +5,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import SuccessMessage from "@/components/SuccessMessage";
 import ErrorMessage from "@/components/ErrorMessage";
+import LoadingOverlay from "@/components/LoadingOverlay";
 import { API_BASE, formatSize, friendlyError } from "@/lib/constants";
 
 const SUPPORTED_EXTS = ["png", "jpg", "jpeg", "webp", "bmp"];
@@ -40,7 +41,6 @@ export default function ImageToPdfPage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const [progressText, setProgressText] = useState("");
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [overIdx, setOverIdx] = useState<number | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -166,7 +166,6 @@ export default function ImageToPdfPage() {
     setDownloadUrl(null);
     setStats(null);
     setSuccess(false);
-    setProgressText("Uploading...");
 
     const formData = new FormData();
     files.forEach((f) => formData.append("files", f.file));
@@ -176,12 +175,6 @@ export default function ImageToPdfPage() {
 
       const result = await new Promise<{ blob: Blob; headers: Record<string, string> }>(
         (resolve, reject) => {
-          xhr.upload.onprogress = (e) => {
-            if (e.lengthComputable) {
-              setProgressText(e.loaded < e.total ? "Uploading..." : "Processing...");
-            }
-          };
-
           xhr.onload = () => {
             if (xhr.status >= 200 && xhr.status < 300) {
               const headers: Record<string, string> = {};
@@ -210,8 +203,6 @@ export default function ImageToPdfPage() {
         }
       );
 
-      setProgressText("Preparing download...");
-
       if (downloadUrlRef.current) URL.revokeObjectURL(downloadUrlRef.current);
       const url = URL.createObjectURL(result.blob);
       downloadUrlRef.current = url;
@@ -230,7 +221,6 @@ export default function ImageToPdfPage() {
       setError(friendlyError(e instanceof Error ? e.message : "Failed to convert images"));
     } finally {
       setIsConverting(false);
-      setProgressText("");
     }
   }, [files, isConverting]);
 
@@ -278,7 +268,7 @@ export default function ImageToPdfPage() {
               <div className="mt-6">
                 <div className="mb-3 flex items-center justify-between">
                   <p className="text-sm font-medium text-slate-300">{files.length} {files.length === 1 ? "image" : "images"} selected{files.length === MAX_IMAGES && <span className="ml-2 text-amber-400">(max reached)</span>}</p>
-                  <button onClick={clearAll} className="text-xs font-medium text-slate-500 transition-colors hover:text-red-400">Clear all</button>
+                  <button onClick={clearAll} disabled={isConverting} className="text-xs font-medium text-slate-500 transition-colors hover:text-red-400 disabled:pointer-events-none disabled:opacity-40">Clear all</button>
                 </div>
                 <ul className="space-y-2" role="list">
                   {files.map((f, i) => (
@@ -289,12 +279,13 @@ export default function ImageToPdfPage() {
                       </div>
                       <div className="min-w-0 flex-1"><p className="truncate text-sm font-medium text-white">{f.name}</p><p className="text-xs text-slate-500">{f.size}</p></div>
                       <span className="text-xs font-medium text-slate-600">{i + 1}</span>
-                      <button onClick={() => removeFile(f.id)} className="ml-1 rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-red-500/10 hover:text-red-400" aria-label={`Remove ${f.name}`}>
+                      <button onClick={() => removeFile(f.id)} disabled={isConverting} className="ml-1 rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-red-500/10 hover:text-red-400 disabled:pointer-events-none disabled:opacity-40" aria-label={`Remove ${f.name}`}>
                         <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                       </button>
                     </li>
                   ))}
                 </ul>
+                {isConverting && <LoadingOverlay accent="teal" />}
                 {error && <ErrorMessage error={error} />}
                 {success && <SuccessMessage />}
                 {stats && (
@@ -316,7 +307,7 @@ export default function ImageToPdfPage() {
                 ) : (
                   <button onClick={handleConvert} disabled={files.length === 0 || isConverting} className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/25 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-blue-500/30 disabled:pointer-events-none disabled:opacity-40">
                     {isConverting ? (
-                      <><svg className="h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>{progressText || "Creating PDF..."}</>
+                      "Processing..."
                     ) : (
                       <><svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>Create PDF</>
                     )}

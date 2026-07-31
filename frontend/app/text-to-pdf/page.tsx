@@ -5,6 +5,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import SuccessMessage from "@/components/SuccessMessage";
 import ErrorMessage from "@/components/ErrorMessage";
+import LoadingOverlay from "@/components/LoadingOverlay";
 import { API_BASE, formatSize, friendlyError } from "@/lib/constants";
 
 interface Stats {
@@ -24,7 +25,6 @@ export default function TextToPdfPage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const [progressText, setProgressText] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const downloadUrlRef = useRef<string | null>(null);
 
@@ -98,7 +98,6 @@ export default function TextToPdfPage() {
     setDownloadUrl(null);
     setStats(null);
     setSuccess(false);
-    setProgressText("Uploading...");
 
     try {
       const formData = new FormData();
@@ -108,7 +107,6 @@ export default function TextToPdfPage() {
         formData.append("text", text);
       }
 
-      setProgressText("Processing...");
       const res = await fetch(`${API_BASE}/api/pdf/from-text`, {
         method: "POST",
         body: formData,
@@ -119,7 +117,6 @@ export default function TextToPdfPage() {
         throw new Error(err.detail || "Conversion failed");
       }
 
-      setProgressText("Preparing download...");
       const blob = await res.blob();
       if (downloadUrlRef.current) URL.revokeObjectURL(downloadUrlRef.current);
       const url = URL.createObjectURL(blob);
@@ -136,7 +133,6 @@ export default function TextToPdfPage() {
       setError(friendlyError(e instanceof Error ? e.message : "Conversion failed"));
     } finally {
       setIsConverting(false);
-      setProgressText("");
     }
   }, [file, text, activeTab, isConverting]);
 
@@ -178,8 +174,8 @@ export default function TextToPdfPage() {
           </div>
           <div className="mx-auto mt-12 max-w-2xl">
             <div className="mb-8 flex items-center justify-center gap-1 rounded-xl border border-white/10 bg-white/[0.02] p-1">
-              <button onClick={() => handleTabChange("upload")} className={`flex-1 rounded-lg px-4 py-2 text-sm font-medium transition-all ${activeTab === "upload" ? "bg-rose-500/20 text-rose-400 shadow-sm" : "text-slate-400 hover:text-white"}`}>Upload TXT</button>
-              <button onClick={() => handleTabChange("paste")} className={`flex-1 rounded-lg px-4 py-2 text-sm font-medium transition-all ${activeTab === "paste" ? "bg-rose-500/20 text-rose-400 shadow-sm" : "text-slate-400 hover:text-white"}`}>Paste Text</button>
+              <button onClick={() => handleTabChange("upload")} disabled={isConverting} className={`flex-1 rounded-lg px-4 py-2 text-sm font-medium transition-all disabled:pointer-events-none ${activeTab === "upload" ? "bg-rose-500/20 text-rose-400 shadow-sm" : "text-slate-400 hover:text-white"} ${isConverting ? "opacity-40" : ""}`}>Upload TXT</button>
+              <button onClick={() => handleTabChange("paste")} disabled={isConverting} className={`flex-1 rounded-lg px-4 py-2 text-sm font-medium transition-all disabled:pointer-events-none ${activeTab === "paste" ? "bg-rose-500/20 text-rose-400 shadow-sm" : "text-slate-400 hover:text-white"} ${isConverting ? "opacity-40" : ""}`}>Paste Text</button>
             </div>
             {activeTab === "upload" ? (
               <>
@@ -199,7 +195,7 @@ export default function TextToPdfPage() {
                   <div className="mt-6">
                     <div className="mb-3 flex items-center justify-between">
                       <p className="text-sm font-medium text-slate-300">1 file selected</p>
-                      <button onClick={removeFile} className="text-xs font-medium text-slate-500 transition-colors hover:text-red-400">Clear all</button>
+                      <button onClick={removeFile} disabled={isConverting} className="text-xs font-medium text-slate-500 transition-colors hover:text-red-400 disabled:pointer-events-none disabled:opacity-40">Clear all</button>
                     </div>
                     <ul className="space-y-2" role="list">
                       <li className="glass-card flex items-center gap-4 rounded-xl px-4 py-3 transition-all duration-200 hover:border-rose-500/20">
@@ -207,11 +203,12 @@ export default function TextToPdfPage() {
                           <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                         </div>
                         <div className="min-w-0 flex-1"><p className="truncate text-sm font-medium text-white">{file.name}</p><p className="text-xs text-slate-500">{file.size}</p></div>
-                        <button onClick={removeFile} className="ml-1 rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-red-500/10 hover:text-red-400" aria-label={`Remove ${file.name}`}>
+                        <button onClick={removeFile} disabled={isConverting} className="ml-1 rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-red-500/10 hover:text-red-400 disabled:pointer-events-none disabled:opacity-40" aria-label={`Remove ${file.name}`}>
                           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                         </button>
                       </li>
                     </ul>
+                    {isConverting && <LoadingOverlay accent="rose" />}
                     {error && <ErrorMessage error={error} />}
                     {success && <SuccessMessage />}
                     {stats && (
@@ -232,7 +229,7 @@ export default function TextToPdfPage() {
                     ) : (
                       <button onClick={handleConvert} disabled={!file || isConverting} className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-rose-500/25 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-rose-500/30 disabled:pointer-events-none disabled:opacity-40">
                         {isConverting ? (
-                          <><svg className="h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>{progressText || "Converting..."}</>
+                          "Processing..."
                         ) : (
                           <><svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>Convert to PDF</>
                         )}
@@ -243,14 +240,15 @@ export default function TextToPdfPage() {
               </>
             ) : (
               <div className="mt-6">
-                <textarea value={text} onChange={(e) => { setText(e.target.value); setDownloadUrl(null); setStats(null); setError(null); setSuccess(false); }}
+                <textarea value={text} onChange={(e) => { setText(e.target.value); setDownloadUrl(null); setStats(null); setError(null); setSuccess(false); }} disabled={isConverting}
                   placeholder="Type or paste your text here..."
-                  className="min-h-[280px] w-full resize-y rounded-2xl border border-white/10 bg-white/[0.02] p-5 text-sm text-white placeholder-slate-500 outline-none transition-all focus:border-rose-500/40 focus:bg-rose-500/[0.04]"
+                  className="min-h-[280px] w-full resize-y rounded-2xl border border-white/10 bg-white/[0.02] p-5 text-sm text-white placeholder-slate-500 outline-none transition-all focus:border-rose-500/40 focus:bg-rose-500/[0.04] disabled:pointer-events-none disabled:opacity-40"
                   spellCheck={false} />
                 <div className="mt-3 flex items-center gap-4 text-xs text-slate-500">
                   <span>Characters: <span className="font-medium text-slate-300">{charCount.toLocaleString()}</span></span>
                   <span>Lines: <span className="font-medium text-slate-300">{lineCount.toLocaleString()}</span></span>
                 </div>
+                {isConverting && <LoadingOverlay accent="rose" />}
                 {error && <ErrorMessage error={error} />}
                 {success && <SuccessMessage />}
                 {stats && (
@@ -271,7 +269,7 @@ export default function TextToPdfPage() {
                 ) : (
                   <button onClick={handleConvert} disabled={!text.trim() || isConverting} className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-rose-500/25 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-rose-500/30 disabled:pointer-events-none disabled:opacity-40">
                     {isConverting ? (
-                      <><svg className="h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>{progressText || "Converting..."}</>
+                      "Processing..."
                     ) : (
                       <><svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>Convert to PDF</>
                     )}

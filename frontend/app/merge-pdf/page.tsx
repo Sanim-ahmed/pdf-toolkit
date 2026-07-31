@@ -5,6 +5,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import SuccessMessage from "@/components/SuccessMessage";
 import ErrorMessage from "@/components/ErrorMessage";
+import LoadingOverlay from "@/components/LoadingOverlay";
 import { API_BASE, formatSize, friendlyError } from "@/lib/constants";
 
 interface FileItem {
@@ -20,7 +21,6 @@ export default function MergePdfPage() {
   const [isMerging, setIsMerging] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const [progressText, setProgressText] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
   const addFiles = useCallback((newFiles: FileList | File[]) => {
@@ -80,13 +80,11 @@ export default function MergePdfPage() {
     setIsMerging(true);
     setError(null);
     setSuccess(false);
-    setProgressText("Uploading...");
 
     try {
       const formData = new FormData();
       files.forEach((f) => formData.append("files", f.file));
 
-      setProgressText("Processing...");
       const res = await fetch(`${API_BASE}/api/pdf/merge`, {
         method: "POST",
         body: formData,
@@ -97,7 +95,6 @@ export default function MergePdfPage() {
         throw new Error(err.detail || "Merge failed");
       }
 
-      setProgressText("Preparing download...");
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -112,7 +109,6 @@ export default function MergePdfPage() {
       setError(friendlyError(e instanceof Error ? e.message : "Merge failed"));
     } finally {
       setIsMerging(false);
-      setProgressText("");
     }
   }, [files, isMerging]);
 
@@ -148,7 +144,7 @@ export default function MergePdfPage() {
               <div className="mt-6">
                 <div className="mb-3 flex items-center justify-between">
                   <p className="text-sm font-medium text-slate-300">{files.length} {files.length === 1 ? "file" : "files"} selected</p>
-                  <button onClick={clearAll} className="text-xs font-medium text-slate-500 transition-colors hover:text-red-400">Clear all</button>
+                  <button onClick={clearAll} disabled={isMerging} className="text-xs font-medium text-slate-500 transition-colors hover:text-red-400 disabled:pointer-events-none disabled:opacity-40">Clear all</button>
                 </div>
                 <ul className="space-y-2" role="list">
                   {files.map((f, i) => (
@@ -158,17 +154,18 @@ export default function MergePdfPage() {
                       </div>
                       <div className="min-w-0 flex-1"><p className="truncate text-sm font-medium text-white">{f.name}</p><p className="text-xs text-slate-500">{f.size}</p></div>
                       <span className="text-xs font-medium text-slate-600">{i + 1}</span>
-                      <button onClick={() => removeFile(f.id)} className="ml-1 rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-red-500/10 hover:text-red-400" aria-label={`Remove ${f.name}`}>
+                      <button onClick={() => removeFile(f.id)} disabled={isMerging} className="ml-1 rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-red-500/10 hover:text-red-400 disabled:pointer-events-none disabled:opacity-40" aria-label={`Remove ${f.name}`}>
                         <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                       </button>
                     </li>
                   ))}
                 </ul>
+                {isMerging && <LoadingOverlay accent="purple" />}
                 {error && <ErrorMessage error={error} />}
                 {success && <SuccessMessage />}
                 <button onClick={handleMerge} disabled={files.length === 0 || isMerging} className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-purple-500/25 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-purple-500/30 disabled:pointer-events-none disabled:opacity-40">
                   {isMerging ? (
-                    <><svg className="h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>{progressText || "Merging..."}</>
+                    "Processing..."
                   ) : (
                     <><svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 14v6m-3-3h6M6 10h2a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v2a2 2 0 002 2zm10 0h2a2 2 0 002-2V6a2 2 0 00-2-2h-2a2 2 0 00-2 2v2a2 2 0 002 2zM6 20h2a2 2 0 002-2v-2a2 2 0 00-2-2H6a2 2 0 00-2 2v2a2 2 0 002 2z" /></svg>Merge PDF</>
                   )}

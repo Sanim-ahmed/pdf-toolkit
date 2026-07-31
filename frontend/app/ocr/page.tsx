@@ -5,6 +5,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import SuccessMessage from "@/components/SuccessMessage";
 import ErrorMessage from "@/components/ErrorMessage";
+import LoadingOverlay from "@/components/LoadingOverlay";
 import { API_BASE, formatSize, friendlyError } from "@/lib/constants";
 
 const ACCEPTED_TYPES = [
@@ -37,7 +38,6 @@ export default function OcrPage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const [progressText, setProgressText] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const downloadUrlRef = useRef<string | null>(null);
 
@@ -106,14 +106,12 @@ export default function OcrPage() {
     setDownloadUrl(null);
     setStats(null);
     setSuccess(false);
-    setProgressText("Uploading...");
 
     try {
       const formData = new FormData();
       formData.append("file", file.file);
       formData.append("language", language);
 
-      setProgressText("Processing...");
       const res = await fetch(`${API_BASE}/api/pdf/ocr`, {
         method: "POST",
         body: formData,
@@ -124,7 +122,6 @@ export default function OcrPage() {
         throw new Error(err.detail || "OCR extraction failed");
       }
 
-      setProgressText("Preparing download...");
       const blob = await res.blob();
       if (downloadUrlRef.current) URL.revokeObjectURL(downloadUrlRef.current);
       const url = URL.createObjectURL(blob);
@@ -141,7 +138,6 @@ export default function OcrPage() {
       setError(friendlyError(e instanceof Error ? e.message : "Failed to extract text"));
     } finally {
       setIsProcessing(false);
-      setProgressText("");
     }
   }, [file, isProcessing, language]);
 
@@ -187,7 +183,7 @@ export default function OcrPage() {
               <div className="mt-6">
                 <div className="mb-3 flex items-center justify-between">
                   <p className="text-sm font-medium text-slate-300">1 file selected</p>
-                  <button onClick={removeFile} className="text-xs font-medium text-slate-500 transition-colors hover:text-red-400">Clear all</button>
+                  <button onClick={removeFile} disabled={isProcessing} className="text-xs font-medium text-slate-500 transition-colors hover:text-red-400 disabled:pointer-events-none disabled:opacity-40">Clear all</button>
                 </div>
                 <ul className="space-y-2" role="list">
                   <li className="glass-card flex items-center gap-4 rounded-xl px-4 py-3 transition-all duration-200 hover:border-amber-500/20">
@@ -195,7 +191,7 @@ export default function OcrPage() {
                       <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
                     </div>
                     <div className="min-w-0 flex-1"><p className="truncate text-sm font-medium text-white">{file.name}</p><p className="text-xs text-slate-500">{file.size}</p></div>
-                    <button onClick={removeFile} className="ml-1 rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-red-500/10 hover:text-red-400" aria-label={`Remove ${file.name}`}>
+                    <button onClick={removeFile} disabled={isProcessing} className="ml-1 rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-red-500/10 hover:text-red-400 disabled:pointer-events-none disabled:opacity-40" aria-label={`Remove ${file.name}`}>
                       <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                     </button>
                   </li>
@@ -203,18 +199,13 @@ export default function OcrPage() {
                 <div className="mt-5 space-y-3">
                   <p className="text-sm font-medium text-slate-300">Language</p>
                   {LANGUAGES.map((lang) => (
-                    <label key={lang.value} className={`flex cursor-pointer items-center gap-4 rounded-xl border px-4 py-3 transition-all ${language === lang.value ? "border-amber-500/40 bg-amber-500/[0.06]" : "border-white/10 bg-white/[0.02] hover:border-white/20"}`}>
-                      <input type="radio" name="language" value={lang.value} checked={language === lang.value} onChange={(e) => setLanguage(e.target.value)} className="h-4 w-4 accent-amber-500" />
+                    <label key={lang.value} className={`flex cursor-pointer items-center gap-4 rounded-xl border px-4 py-3 transition-all ${isProcessing ? "opacity-40 pointer-events-none" : ""} ${language === lang.value ? "border-amber-500/40 bg-amber-500/[0.06]" : "border-white/10 bg-white/[0.02] hover:border-white/20"}`}>
+                      <input type="radio" name="language" value={lang.value} checked={language === lang.value} onChange={(e) => setLanguage(e.target.value)} disabled={isProcessing} className="h-4 w-4 accent-amber-500" />
                       <div><p className="text-sm font-medium text-white">{lang.label}</p></div>
                     </label>
                   ))}
                 </div>
-                <div className="mt-5 rounded-xl border border-amber-500/20 bg-amber-500/[0.04] p-4">
-                  <p className="text-sm text-slate-400">
-                    <span className="mr-1.5">⚠️</span>
-                    OCR processing may take some time depending on the image size, document quality, and current server load. Please keep this page open until the extraction is complete.
-                  </p>
-                </div>
+                {isProcessing && <LoadingOverlay accent="amber" showOcrNotice />}
                 {error && <ErrorMessage error={error} />}
                 {success && <SuccessMessage />}
                 {stats && (
@@ -234,7 +225,7 @@ export default function OcrPage() {
                 ) : (
                   <button onClick={handleExtract} disabled={!file || isProcessing} className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-amber-500/25 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-amber-500/30 disabled:pointer-events-none disabled:opacity-40">
                     {isProcessing ? (
-                      <><svg className="h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>{progressText || "Extracting Text..."}</>
+                      "Processing..."
                     ) : (
                       <><svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" /></svg>Extract Text</>
                     )}
